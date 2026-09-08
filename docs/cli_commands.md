@@ -780,6 +780,68 @@ This document provides an overview of CLI commands that can be sent to MeshCore 
 
 ---
 
+#### Add a repeater to the block list
+**Usage:**
+- `block.add <prefix>`
+
+**Parameters:**
+- `prefix`: 2-8 hex characters (1-4 bytes) of the target repeater's public key
+
+**Note:** Blocked repeaters are identified by a prefix of their public key rather than a full key, since flood-relayed packets only carry a short hash of each hop's identity in their path (not the full key) — see `block.lasthop` and `block.alltypes` below for how the prefix is matched against a packet. Up to 8 entries can be stored. Adding a prefix already on the list replies `OK - already blocked` without creating a duplicate.
+
+---
+
+#### Remove a repeater from the block list
+**Usage:**
+- `block.remove <prefix>`
+
+**Parameters:**
+- `prefix`: The exact hex prefix previously passed to `block.add`
+
+---
+
+#### Clear the entire block list
+**Usage:**
+- `block.clear`
+
+---
+
+#### View the block list
+**Usage:**
+- `block.list`
+
+**Note:** Replies with a comma-separated list of blocked key prefixes (hex), or `(empty)` if none are set.
+
+---
+
+#### Restrict repeater-block path checks to the immediate previous hop
+**Usage:**
+- `get block.lasthop`
+- `set block.lasthop <value>`
+
+**Parameters:**
+- `value`: `1` (only check the immediate previous hop) or `0` (check every hop in the packet's path)
+
+**Default:** `1`
+
+**Note:** Applies to the block list added via `block.add`. A flood packet's path lists a short hash prefix of every repeater that has relayed it so far. With the default of `1`, only the most recent hop (the repeater that relayed this packet directly to this node) is checked against the block list. Set to `0` to reject a packet if *any* hop anywhere in its path matches a blocked prefix, not just the most recent one. ADVERT packets are always checked against the full block list regardless of this setting, since they carry the originating repeater's complete public key.
+
+---
+
+#### Extend repeater blocking to all flood payload types
+**Usage:**
+- `get block.alltypes`
+- `set block.alltypes <value>`
+
+**Parameters:**
+- `value`: `1` (check every flood payload type) or `0` (only check GRP_TXT/GRP_DATA)
+
+**Default:** `0`
+
+**Note:** By default, the block list (`block.add`) is only checked against group-broadcast traffic (GRP_TXT/GRP_DATA) plus ADVERT packets — the kind of noise a misbehaving repeater is most likely to be blocked for. Direct/admin payload types (REQ, ANON_REQ, TXT_MSG, RESPONSE, ACK, PATH, ...) are left unchecked, so an overly broad or mistaken prefix on the block list can't lock the admin out of managing this repeater. Set to `1` to opt into checking every flood payload type against the block list, accepting that risk.
+
+---
+
 ### ACL
 
 #### Add, update or remove permissions for a companion

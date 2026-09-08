@@ -238,6 +238,76 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
       } else {
         strcpy(reply, "ERR: bad pubkey");
       }
+    } else if (memcmp(command, "block.add ", 10) == 0) {
+      const char* hex = &command[10];
+      int hex_len = strlen(hex);
+      int n = hex_len / 2;
+      uint8_t prefix[BLOCKED_REPEATER_MAX_PREFIX];
+      if (hex_len % 2 != 0 || n < 1 || n > BLOCKED_REPEATER_MAX_PREFIX || !mesh::Utils::fromHex(prefix, n, hex)) {
+        strcpy(reply, "Error, prefix must be 2-8 hex chars (1-4 bytes)");
+      } else {
+        int free_slot = -1, dup_slot = -1;
+        for (int i = 0; i < MAX_BLOCKED_REPEATERS; i++) {
+          BlockedRepeaterKey& e = _prefs->blocked_repeaters[i];
+          if (e.prefix_len == 0) {
+            if (free_slot < 0) free_slot = i;
+          } else if (e.prefix_len == n && memcmp(e.prefix, prefix, n) == 0) {
+            dup_slot = i;
+            break;
+          }
+        }
+        if (dup_slot >= 0) {
+          strcpy(reply, "OK - already blocked");
+        } else if (free_slot < 0) {
+          strcpy(reply, "Error, block list full");
+        } else {
+          memcpy(_prefs->blocked_repeaters[free_slot].prefix, prefix, n);
+          _prefs->blocked_repeaters[free_slot].prefix_len = n;
+          savePrefs();
+          strcpy(reply, "OK");
+        }
+      }
+    } else if (memcmp(command, "block.remove ", 13) == 0) {
+      const char* hex = &command[13];
+      int hex_len = strlen(hex);
+      int n = hex_len / 2;
+      uint8_t prefix[BLOCKED_REPEATER_MAX_PREFIX];
+      if (hex_len % 2 != 0 || n < 1 || n > BLOCKED_REPEATER_MAX_PREFIX || !mesh::Utils::fromHex(prefix, n, hex)) {
+        strcpy(reply, "Error, bad prefix");
+      } else {
+        int found = -1;
+        for (int i = 0; i < MAX_BLOCKED_REPEATERS; i++) {
+          BlockedRepeaterKey& e = _prefs->blocked_repeaters[i];
+          if (e.prefix_len == n && memcmp(e.prefix, prefix, n) == 0) { found = i; break; }
+        }
+        if (found < 0) {
+          strcpy(reply, "Error, not found");
+        } else {
+          _prefs->blocked_repeaters[found].prefix_len = 0;
+          memset(_prefs->blocked_repeaters[found].prefix, 0, BLOCKED_REPEATER_MAX_PREFIX);
+          savePrefs();
+          strcpy(reply, "OK");
+        }
+      }
+    } else if (memcmp(command, "block.clear", 11) == 0) {
+      memset(_prefs->blocked_repeaters, 0, sizeof(_prefs->blocked_repeaters));
+      savePrefs();
+      strcpy(reply, "OK");
+    } else if (memcmp(command, "block.list", 10) == 0) {
+      char* dp = reply;
+      int count = 0;
+      for (int i = 0; i < MAX_BLOCKED_REPEATERS; i++) {
+        BlockedRepeaterKey& e = _prefs->blocked_repeaters[i];
+        if (e.prefix_len == 0) continue;
+        if (count > 0) *dp++ = ',';
+        char hex[BLOCKED_REPEATER_MAX_PREFIX*2 + 1];
+        mesh::Utils::toHex(hex, e.prefix, e.prefix_len);
+        strcpy(dp, hex);
+        dp += strlen(hex);
+        count++;
+      }
+      *dp = 0;
+      if (count == 0) strcpy(reply, "(empty)");
     } else if (memcmp(command, "tempradio ", 10) == 0) {
       strcpy(tmp, &command[10]);
       const char *parts[5];
@@ -686,6 +756,14 @@ void CommonCLI::handleSetCmd(uint32_t sender_timestamp, char* command, char* rep
     _prefs->grp_data_block = atoi(&config[15]) ? 1 : 0;
     savePrefs();
     strcpy(reply, "OK");
+  } else if (memcmp(config, "block.lasthop ", 14) == 0) {
+    _prefs->block_last_hop_only = atoi(&config[14]) ? 1 : 0;
+    savePrefs();
+    strcpy(reply, "OK");
+  } else if (memcmp(config, "block.alltypes ", 15) == 0) {
+    _prefs->block_all_types = atoi(&config[15]) ? 1 : 0;
+    savePrefs();
+    strcpy(reply, "OK");
   } else if (memcmp(config, "direct.txdelay ", 15) == 0) {
     float f = atof(&config[15]);
     if (f >= 0 && f <= 2.0f) {
@@ -911,6 +989,10 @@ void CommonCLI::handleGetCmd(uint32_t sender_timestamp, char* command, char* rep
     sprintf(reply, "> %d", (uint32_t)_prefs->grp_relay_max_retries);
   } else if (memcmp(config, "grp.data.block", 14) == 0) {
     sprintf(reply, "> %d", (uint32_t)_prefs->grp_data_block);
+  } else if (memcmp(config, "block.lasthop", 13) == 0) {
+    sprintf(reply, "> %d", (uint32_t)_prefs->block_last_hop_only);
+  } else if (memcmp(config, "block.alltypes", 14) == 0) {
+    sprintf(reply, "> %d", (uint32_t)_prefs->block_all_types);
   } else if (memcmp(config, "direct.txdelay", 14) == 0) {
     sprintf(reply, "> %s", StrHelper::ftoa(_prefs->direct_tx_delay_factor));
   } else if (memcmp(config, "owner.info", 10) == 0) {

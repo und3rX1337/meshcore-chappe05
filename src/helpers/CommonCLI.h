@@ -20,6 +20,18 @@
 #define LOOP_DETECT_MODERATE  2
 #define LOOP_DETECT_STRICT    3
 
+#define MAX_BLOCKED_REPEATERS        8
+#define BLOCKED_REPEATER_MAX_PREFIX  4
+
+// A blocked repeater, identified by a 1-4 byte prefix of its public key.
+// Adverts carry the full pubkey, so all 'prefix_len' bytes can be matched; but
+// flood-relayed packets only carry a 1-byte path hash per hop (see Identity::copyHashTo,
+// "hash is just prefix of pub_key"), so only prefix[0] is checked against those.
+struct BlockedRepeaterKey {
+  uint8_t prefix[BLOCKED_REPEATER_MAX_PREFIX];
+  uint8_t prefix_len;  // 0 = empty/unused slot, 1-4 = active entry
+};
+
 class NodePrefs : public ConfigSerializer {
 public:
   // in-memory backing data
@@ -74,7 +86,25 @@ public:
   uint8_t grp_relay_first_hop_only = 1; // only track/retry packets received directly (0 prior hops)
   uint8_t grp_relay_max_retries = 2; // extra re-broadcast attempts if no confirmation heard
   uint8_t grp_data_block = 1;   // drop GRP_DATA flood packets outright (boolean, default ON = blocked)
+  uint8_t block_last_hop_only = 1; // blocked_repeaters: 0 = match any hop in path, 1 = match only the immediate previous hop
+  uint8_t block_all_types = 0; // 0 = only check GRP_TXT/GRP_DATA (safe default, admin traffic is never blocked)
+                                // 1 = also check admin/direct payload types (REQ, ANON_REQ, TXT_MSG, ...) --
+                                //     opt-in only: a wrong prefix in the block list can then lock the admin out
+  BlockedRepeaterKey blocked_repeaters[MAX_BLOCKED_REPEATERS];
   uint8_t extra_sf[4];
+
+  // true if 'key' (of 'key_len' bytes) matches any blocked repeater's prefix.
+  // Only min(entry.prefix_len, key_len) bytes are compared, so a 1-byte 'key'
+  // (eg. a path hash byte) still matches against a longer stored prefix.
+  bool isBlockedKeyPrefix(const uint8_t* key, uint8_t key_len) const {
+    for (int i = 0; i < MAX_BLOCKED_REPEATERS; i++) {
+      const BlockedRepeaterKey& e = blocked_repeaters[i];
+      if (e.prefix_len == 0) continue;
+      uint8_t n = e.prefix_len < key_len ? e.prefix_len : key_len;
+      if (n > 0 && memcmp(e.prefix, key, n) == 0) return true;
+    }
+    return false;
+  }
 
 private:
   class RadioPrefs : public ConfigSerializer {
@@ -159,6 +189,9 @@ private:
       def("gr_1hop", _parent->grp_relay_first_hop_only);
       def("gr_retry", _parent->grp_relay_max_retries);
       def("gd_block", _parent->grp_data_block);
+      def("block_lh_only", _parent->block_last_hop_only);
+      def("block_all", _parent->block_all_types);
+      def("block_keys", _parent->blocked_repeaters, sizeof(_parent->blocked_repeaters));
     }
   public:
     RepeatPrefs(NodePrefs* parent) : _parent(parent) { }
@@ -201,6 +234,7 @@ public:
     guest_password[0] = 0;
     bridge_secret[0] = 0;
     owner_info[0] = 0;
+    memset(blocked_repeaters, 0, sizeof(blocked_repeaters));
   }
 };
 

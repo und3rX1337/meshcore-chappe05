@@ -432,8 +432,39 @@ void MyMesh::sendFloodReply(mesh::Packet* packet, unsigned long delay_millis, ui
 }
 
 bool MyMesh::filterRecvFloodPacket(mesh::Packet *packet) {
-  if (_prefs.grp_data_block && packet->getPayloadType() == PAYLOAD_TYPE_GRP_DATA) {
+  uint8_t payload_type = packet->getPayloadType();
+
+  if (_prefs.grp_data_block && payload_type == PAYLOAD_TYPE_GRP_DATA) {
     return true;   // drop GRP_DATA packets outright, before processing or re-forwarding
+  }
+
+  // ADVERT packets carry the sender's full public key in cleartext (payload[0..PUB_KEY_SIZE-1],
+  // pre-signature-check), so a multi-byte prefix can be matched precisely.
+  if (payload_type == PAYLOAD_TYPE_ADVERT && packet->payload_len >= PUB_KEY_SIZE
+      && _prefs.isBlockedKeyPrefix(packet->payload, PUB_KEY_SIZE)) {
+    return true;   // drop adverts originated by a blocked repeater
+  }
+
+  // By default, the path-based block only applies to group-broadcast traffic (the noise/spam a
+  // blocked repeater can inject into the mesh): direct/admin payload types (REQ, ANON_REQ,
+  // TXT_MSG, RESPONSE, ACK, PATH, ...) are NOT checked, so a wrong prefix in the block list can't
+  // lock the admin out of managing this repeater. block_all_types opts back into checking every
+  // flood payload type, at that risk.
+  if (_prefs.block_all_types || payload_type == PAYLOAD_TYPE_GRP_TXT || payload_type == PAYLOAD_TYPE_GRP_DATA) {
+    // Every flood packet's 'path' lists each relay hop so far, in cleartext, stored as a 1-3
+    // byte prefix of that hop's identity (size fixed per-packet by the ORIGINATING node's
+    // path_hash_mode -- see Identity::copyHashTo, "hash is just prefix of pub_key"). By default,
+    // check every hop, so a packet is dropped as soon as it's known to have passed through a
+    // blocked repeater anywhere along its route so far; block_last_hop_only restricts this to
+    // just the immediate previous hop (the repeater that relayed this packet directly to us).
+    uint8_t hop_count = packet->getPathHashCount();
+    uint8_t hash_size = packet->getPathHashSize();
+    uint8_t first_hop = _prefs.block_last_hop_only && hop_count > 0 ? hop_count - 1 : 0;
+    for (uint8_t h = first_hop; h < hop_count; h++) {
+      if (_prefs.isBlockedKeyPrefix(&packet->path[h * hash_size], hash_size)) {
+        return true;   // drop packets that were relayed via a blocked repeater
+      }
+    }
   }
   return false;
 }
