@@ -70,6 +70,22 @@ struct NeighbourInfo {
   int8_t snr; // multiplied by 4, user should divide to get float value
 };
 
+// GRP_TXT/GRP_DATA relay confirmation: a repeater can't decrypt group channel content, so the only
+// evidence a relay actually propagated further is passively hearing some OTHER node re-broadcast the
+// same packet (same hash). Until that's heard, keep retrying the relay a limited number of times.
+// Enable/timeout/first-hop-only/max-retries are all runtime-configurable, see NodePrefs.grp_relay_*.
+#define MAX_PENDING_GRP_RELAYS      8
+
+struct PendingGrpRelay {
+  uint8_t hash[MAX_HASH_SIZE];
+  uint8_t raw[MAX_TRANS_UNIT];
+  uint8_t raw_len;
+  uint8_t priority;
+  uint8_t retries_left;
+  bool in_use;
+  unsigned long confirm_deadline;
+};
+
 #ifndef FIRMWARE_BUILD_DATE
   #define FIRMWARE_BUILD_DATE   "14 Aug 2026"
 #endif
@@ -107,6 +123,9 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
 #if MAX_NEIGHBOURS
   NeighbourInfo neighbours[MAX_NEIGHBOURS];
 #endif
+  PendingGrpRelay grp_relays[MAX_PENDING_GRP_RELAYS];
+  uint8_t next_grp_relay_idx;
+  uint16_t n_grp_relay_confirmed, n_grp_relay_failed;
   CayenneLPP telemetry;
   unsigned long set_radio_at, revert_radio_at;
   float pending_freq;
@@ -130,6 +149,8 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
 
   File openAppend(const char* fname);
   bool isLooped(const mesh::Packet* packet, const uint8_t max_counters[]);
+  void trackPendingGrpRelay(mesh::Packet* pkt, uint8_t priority);
+  void checkPendingGrpRelays();
 
 protected:
   float getAirtimeBudgetFactor() const override {
@@ -137,6 +158,7 @@ protected:
   }
 
   bool allowPacketForward(const mesh::Packet* packet) override;
+  bool filterRecvFloodPacket(mesh::Packet* packet) override;
   const char* getLogDateTime() override;
   void logRxRaw(float snr, float rssi, const uint8_t raw[], int len) override;
 

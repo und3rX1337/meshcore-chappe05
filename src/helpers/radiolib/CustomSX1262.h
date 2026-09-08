@@ -84,8 +84,18 @@ class CustomSX1262 : public SX1262 {
     #ifndef SX126X_TXEN
       #define SX126X_TXEN RADIOLIB_NC
     #endif
+    #ifdef SX126X_RXEN_MANUAL
+      // Board takes manual ownership of the RXEN pin (eg. it doubles as an
+      // external FEM LNA enable and needs runtime on/off control) instead of
+      // letting RadioLib auto-drive it. Default low/off until the board's
+      // onBeforeReceive()/onBeforeTransmit() hooks drive it explicitly.
+      pinMode(SX126X_RXEN, OUTPUT);
+      digitalWrite(SX126X_RXEN, LOW);
+      setRfSwitchPins(RADIOLIB_NC, SX126X_TXEN);
+    #else
       setRfSwitchPins(SX126X_RXEN, SX126X_TXEN);
-  #endif 
+    #endif
+  #endif
 
   // for improved RX with Heltec v4
   #ifdef SX126X_REGISTER_PATCH

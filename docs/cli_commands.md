@@ -156,6 +156,8 @@ This document provides an overview of CLI commands that can be sent to MeshCore 
 
 **Serial Only:** Yes
 
+**Note:** When [`grp.relay.enable`](#enable-or-disable-group-message-relay-confirmation) is on, the reply also includes `grp_relay_confirmed` and `grp_relay_failed` counters tracking passively-confirmed vs. abandoned group-channel relay attempts.
+
 ---
 
 ## Logging
@@ -705,6 +707,76 @@ This document provides an overview of CLI commands that can be sent to MeshCore 
 - `value`: Maximum flood hop count (0-64) for an advert packet
 
 **Default:** `8`
+
+---
+
+#### Enable or disable GRP_DATA flood blocking
+**Usage:**
+- `get grp.data.block`
+- `set grp.data.block <value>`
+
+**Parameters:**
+- `value`: `1` (block) or `0` (allow)
+
+**Default:** `1` (blocked)
+
+**Note:** A repeater cannot decrypt group channel (GRP_TXT/GRP_DATA) payloads, so it cannot tell legitimate group data traffic apart from abusive or malformed GRP_DATA floods. When enabled (the default), the repeater drops received GRP_DATA flood packets outright, before any further processing or re-forwarding. This does not affect GRP_TXT (group text/chat) packets, which are always processed normally. Set to `0` to allow GRP_DATA packets to flood as before.
+
+---
+
+#### Enable or disable group message relay confirmation
+**Usage:**
+- `get grp.relay.enable`
+- `set grp.relay.enable <value>`
+
+**Parameters:**
+- `value`: `1` (enable) or `0` (disable)
+
+**Default:** `0` (disabled)
+
+**Note:** Because a repeater cannot decrypt group channel (GRP_TXT/GRP_DATA) content, it has no application-level acknowledgement to confirm a relayed group packet actually kept propagating. When enabled, after this repeater forwards a GRP_TXT or GRP_DATA flood packet it passively listens for some *other* node to re-broadcast the identical packet (matched by packet hash) as evidence the relay succeeded. If no such echo is heard before `grp.relay.timeout` elapses, the repeater re-broadcasts the packet itself, up to `grp.relay.retries` extra attempts. Successful and failed confirmations are counted in `stats-packets` (`grp_relay_confirmed` / `grp_relay_failed`).
+
+---
+
+#### View or change the group relay confirmation timeout
+**Usage:**
+- `get grp.relay.timeout`
+- `set grp.relay.timeout <seconds>`
+
+**Parameters:**
+- `seconds`: Seconds to wait for a passive relay confirmation before retrying (1-30)
+
+**Default:** `2`
+
+**Note:** Only relevant when `grp.relay.enable` is `1`. Longer timeouts give slower/further neighbors more time to be heard before this repeater assumes the relay failed and retries.
+
+---
+
+#### Restrict group relay tracking to first-hop packets only
+**Usage:**
+- `get grp.relay.firsthop`
+- `set grp.relay.firsthop <value>`
+
+**Parameters:**
+- `value`: `1` (only track packets received directly, 0 prior hops) or `0` (track regardless of hop count)
+
+**Default:** `1`
+
+**Note:** Only relevant when `grp.relay.enable` is `1`. With the default of `1`, only packets this repeater received directly from the originating node (not already relayed by another repeater) are tracked for confirmation/retry. This limits retry duty to the "edge" of the flood, since a packet that arrives after one or more hops was, by definition, already successfully relayed at least once.
+
+---
+
+#### View or change the maximum group relay retry attempts
+**Usage:**
+- `get grp.relay.retries`
+- `set grp.relay.retries <value>`
+
+**Parameters:**
+- `value`: Number of extra re-broadcast attempts if no confirmation is heard (0-10)
+
+**Default:** `2`
+
+**Note:** Only relevant when `grp.relay.enable` is `1`. Each retry re-broadcasts the exact same packet and restarts the `grp.relay.timeout` wait. Once retries are exhausted with no confirmation heard, the attempt is abandoned and counted as failed in `stats-packets` (`grp_relay_failed`).
 
 ---
 

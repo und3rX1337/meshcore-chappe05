@@ -69,6 +69,11 @@ public:
   uint8_t path_hash_mode = 0;   // which path mode to use when sending
   uint8_t loop_detect = 0;
   uint8_t cad_enabled = 0;      // hardware Channel Activity Detection before TX (boolean)
+  uint8_t grp_relay_enable = 0;      // GRP_TXT/GRP_DATA relay confirmation + retry (boolean, default off)
+  uint8_t grp_relay_timeout = 2;     // seconds to wait for a passive relay confirmation, before retrying
+  uint8_t grp_relay_first_hop_only = 1; // only track/retry packets received directly (0 prior hops)
+  uint8_t grp_relay_max_retries = 2; // extra re-broadcast attempts if no confirmation heard
+  uint8_t grp_data_block = 1;   // drop GRP_DATA flood packets outright (boolean, default ON = blocked)
   uint8_t extra_sf[4];
 
 private:
@@ -149,6 +154,11 @@ private:
       def("f_max_uns", _parent->flood_max_unscoped);
       def("f_max_adv", _parent->flood_max_advert);
       def("loop", _parent->loop_detect);
+      def("gr_en", _parent->grp_relay_enable);
+      def("gr_to", _parent->grp_relay_timeout);
+      def("gr_1hop", _parent->grp_relay_first_hop_only);
+      def("gr_retry", _parent->grp_relay_max_retries);
+      def("gd_block", _parent->grp_data_block);
     }
   public:
     RepeatPrefs(NodePrefs* parent) : _parent(parent) { }

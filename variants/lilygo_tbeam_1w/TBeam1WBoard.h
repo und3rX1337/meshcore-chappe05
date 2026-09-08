@@ -30,14 +30,21 @@
 class TBeam1WBoard : public ESP32Board {
 private:
   bool radio_powered = false;
+  bool _fem_lna_enabled = true;  // external LNA on GPIO21; measurably improves real RX sensitivity despite raising the idle noise floor reading
+  uint32_t _last_tx_millis = 0;
 
 public:
   void begin();
   void onBeforeTransmit() override;
   void onAfterTransmit() override;
+  void onBeforeReceive() override;
   uint16_t getBattMilliVolts() override;
   const char* getManufacturerName() const override;
   void powerOff() override;
+
+  bool setLoRaFemLnaEnabled(bool enable) override;
+  bool canControlLoRaFemLna() const override;
+  bool isLoRaFemLnaEnabled() const override;
 
   // Fan control methods
   void setFanEnabled(bool enabled);

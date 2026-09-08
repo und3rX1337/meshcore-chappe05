@@ -656,6 +656,36 @@ void CommonCLI::handleSetCmd(uint32_t sender_timestamp, char* command, char* rep
     } else {
       strcpy(reply, "Error, max 64");
     }
+  } else if (memcmp(config, "grp.relay.enable ", 17) == 0) {
+    _prefs->grp_relay_enable = atoi(&config[17]) ? 1 : 0;
+    savePrefs();
+    strcpy(reply, "OK");
+  } else if (memcmp(config, "grp.relay.timeout ", 18) == 0) {
+    int secs = atoi(&config[18]);
+    if (secs >= 1 && secs <= 30) {
+      _prefs->grp_relay_timeout = (uint8_t)secs;
+      savePrefs();
+      strcpy(reply, "OK");
+    } else {
+      strcpy(reply, "Error, must be 1-30");
+    }
+  } else if (memcmp(config, "grp.relay.firsthop ", 19) == 0) {
+    _prefs->grp_relay_first_hop_only = atoi(&config[19]) ? 1 : 0;
+    savePrefs();
+    strcpy(reply, "OK");
+  } else if (memcmp(config, "grp.relay.retries ", 18) == 0) {
+    int n = atoi(&config[18]);
+    if (n >= 0 && n <= 10) {
+      _prefs->grp_relay_max_retries = (uint8_t)n;
+      savePrefs();
+      strcpy(reply, "OK");
+    } else {
+      strcpy(reply, "Error, must be 0-10");
+    }
+  } else if (memcmp(config, "grp.data.block ", 15) == 0) {
+    _prefs->grp_data_block = atoi(&config[15]) ? 1 : 0;
+    savePrefs();
+    strcpy(reply, "OK");
   } else if (memcmp(config, "direct.txdelay ", 15) == 0) {
     float f = atof(&config[15]);
     if (f >= 0 && f <= 2.0f) {
@@ -871,6 +901,16 @@ void CommonCLI::handleGetCmd(uint32_t sender_timestamp, char* command, char* rep
     sprintf(reply, "> %d", (uint32_t)_prefs->flood_max_unscoped);
   } else if (memcmp(config, "flood.max", 9) == 0) {
     sprintf(reply, "> %d", (uint32_t)_prefs->flood_max);
+  } else if (memcmp(config, "grp.relay.enable", 16) == 0) {
+    sprintf(reply, "> %d", (uint32_t)_prefs->grp_relay_enable);
+  } else if (memcmp(config, "grp.relay.timeout", 17) == 0) {
+    sprintf(reply, "> %d", (uint32_t)_prefs->grp_relay_timeout);
+  } else if (memcmp(config, "grp.relay.firsthop", 18) == 0) {
+    sprintf(reply, "> %d", (uint32_t)_prefs->grp_relay_first_hop_only);
+  } else if (memcmp(config, "grp.relay.retries", 17) == 0) {
+    sprintf(reply, "> %d", (uint32_t)_prefs->grp_relay_max_retries);
+  } else if (memcmp(config, "grp.data.block", 14) == 0) {
+    sprintf(reply, "> %d", (uint32_t)_prefs->grp_data_block);
   } else if (memcmp(config, "direct.txdelay", 14) == 0) {
     sprintf(reply, "> %s", StrHelper::ftoa(_prefs->direct_tx_delay_factor));
   } else if (memcmp(config, "owner.info", 10) == 0) {

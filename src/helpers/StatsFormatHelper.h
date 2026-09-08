@@ -40,16 +40,20 @@ public:
                                uint32_t n_sent_flood,
                                uint32_t n_sent_direct,
                                uint32_t n_recv_flood,
-                               uint32_t n_recv_direct) {
-    sprintf(reply, 
-      "{\"recv\":%u,\"sent\":%u,\"flood_tx\":%u,\"direct_tx\":%u,\"flood_rx\":%u,\"direct_rx\":%u,\"recv_errors\":%u}",
+                               uint32_t n_recv_direct,
+                               uint16_t n_grp_relay_confirmed = 0,
+                               uint16_t n_grp_relay_failed = 0) {
+    sprintf(reply,
+      "{\"recv\":%u,\"sent\":%u,\"flood_tx\":%u,\"direct_tx\":%u,\"flood_rx\":%u,\"direct_rx\":%u,\"recv_errors\":%u,\"grp_relay_confirmed\":%u,\"grp_relay_failed\":%u}",
       driver.getPacketsRecv(),
       driver.getPacketsSent(),
       n_sent_flood,
       n_sent_direct,
       n_recv_flood,
       n_recv_direct,
-      driver.getPacketsRecvErrors()
+      driver.getPacketsRecvErrors(),
+      n_grp_relay_confirmed,
+      n_grp_relay_failed
     );
   }
 };

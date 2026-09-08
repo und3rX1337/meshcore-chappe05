@@ -431,6 +431,13 @@ void MyMesh::sendFloodReply(mesh::Packet* packet, unsigned long delay_millis, ui
   }
 }
 
+bool MyMesh::filterRecvFloodPacket(mesh::Packet *packet) {
+  if (_prefs.grp_data_block && packet->getPayloadType() == PAYLOAD_TYPE_GRP_DATA) {
+    return true;   // drop GRP_DATA packets outright, before processing or re-forwarding
+  }
+  return false;
+}
+
 bool MyMesh::allowPacketForward(const mesh::Packet *packet) {
   if (_prefs.disable_fwd) return false;
   if (packet->isRouteFlood()
@@ -482,6 +489,20 @@ void MyMesh::logRx(mesh::Packet *pkt, int len, float score) {
     bridge.sendPacket(pkt);
   }
 #endif
+
+  if (_prefs.grp_relay_enable
+      && (pkt->getPayloadType() == PAYLOAD_TYPE_GRP_TXT || pkt->getPayloadType() == PAYLOAD_TYPE_GRP_DATA)) {
+    // passive confirmation: did some OTHER node just re-broadcast a packet we're waiting to hear echoed?
+    uint8_t hash[MAX_HASH_SIZE];
+    pkt->calculatePacketHash(hash);
+    for (int i = 0; i < MAX_PENDING_GRP_RELAYS; i++) {
+      if (grp_relays[i].in_use && memcmp(grp_relays[i].hash, hash, MAX_HASH_SIZE) == 0) {
+        grp_relays[i].in_use = false;
+        n_grp_relay_confirmed++;
+        break;
+      }
+    }
+  }
 
   if (_logging) {
     File f = openAppend(PACKET_LOG_FILE);
@@ -553,6 +574,45 @@ uint32_t MyMesh::getDirectRetransmitDelay(const mesh::Packet *packet) {
   return getRNG()->nextInt(0, 5*t + 1);
 }
 
+void MyMesh::trackPendingGrpRelay(mesh::Packet* pkt, uint8_t priority) {
+  PendingGrpRelay& pr = grp_relays[next_grp_relay_idx];
+  next_grp_relay_idx = (next_grp_relay_idx + 1) % MAX_PENDING_GRP_RELAYS;
+
+  pkt->calculatePacketHash(pr.hash);
+  pr.raw_len = pkt->writeTo(pr.raw);
+  pr.priority = priority;
+  pr.retries_left = _prefs.grp_relay_max_retries;
+  pr.in_use = true;
+  pr.confirm_deadline = futureMillis(((uint32_t)_prefs.grp_relay_timeout) * 1000);
+}
+
+void MyMesh::checkPendingGrpRelays() {
+  for (int i = 0; i < MAX_PENDING_GRP_RELAYS; i++) {
+    PendingGrpRelay& pr = grp_relays[i];
+    if (!pr.in_use || !millisHasNowPassed(pr.confirm_deadline)) continue;
+
+    if (pr.retries_left == 0) {   // never heard it relayed further, give up
+      pr.in_use = false;
+      n_grp_relay_failed++;
+      continue;
+    }
+
+    mesh::Packet* pkt = obtainNewPacket();
+    if (pkt == NULL) {
+      pr.confirm_deadline = futureMillis(1000);  // pool busy, try again shortly
+      continue;
+    }
+    if (!pkt->readFrom(pr.raw, pr.raw_len)) {
+      releasePacket(pkt);
+      pr.in_use = false;
+      continue;
+    }
+    pr.retries_left--;
+    sendPacket(pkt, pr.priority, getRetransmitDelay(pkt));
+    pr.confirm_deadline = futureMillis(((uint32_t)_prefs.grp_relay_timeout) * 1000);
+  }
+}
+
 mesh::DispatcherAction MyMesh::onRecvPacket(mesh::Packet* pkt) {
   if (pkt->getRouteType() == ROUTE_TYPE_TRANSPORT_FLOOD) {
     recv_pkt_region = region_map.findMatch(pkt, REGION_DENY_FLOOD);
@@ -565,7 +625,19 @@ mesh::DispatcherAction MyMesh::onRecvPacket(mesh::Packet* pkt) {
   } else {
     recv_pkt_region = NULL;
   }
-  return Mesh::onRecvPacket(pkt);
+
+  uint8_t payload_type = pkt->getPayloadType();
+  uint8_t hops_before = pkt->getPathHashCount();  // hop count as received, before routeRecvPacket() mutates it
+  mesh::DispatcherAction action = Mesh::onRecvPacket(pkt);
+
+  if (_prefs.grp_relay_enable
+      && (payload_type == PAYLOAD_TYPE_GRP_TXT || payload_type == PAYLOAD_TYPE_GRP_DATA)
+      && action != ACTION_RELEASE && action != ACTION_MANUAL_HOLD
+      && (!_prefs.grp_relay_first_hop_only || hops_before == 0)) {
+    // packet was accepted for flood-forwarding: start watching for a passive relay confirmation
+    trackPendingGrpRelay(pkt, (uint8_t)((action >> 24) - 1));
+  }
+  return action;
 }
 
 void MyMesh::onAnonDataRecv(mesh::Packet *packet, const uint8_t *secret, const mesh::Identity &sender,
@@ -881,6 +953,10 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
   _logging = false;
   region_load_active = false;
   recv_pkt_region = NULL;
+  next_grp_relay_idx = 0;
+  n_grp_relay_confirmed = 0;
+  n_grp_relay_failed = 0;
+  memset(grp_relays, 0, sizeof(grp_relays));
 
 #if MAX_NEIGHBOURS
   memset(neighbours, 0, sizeof(neighbours));
@@ -1170,8 +1246,9 @@ void MyMesh::formatRadioStatsReply(char *reply) {
 }
 
 void MyMesh::formatPacketStatsReply(char *reply) {
-  StatsFormatHelper::formatPacketStats(reply, radio_driver, getNumSentFlood(), getNumSentDirect(), 
-                                       getNumRecvFlood(), getNumRecvDirect());
+  StatsFormatHelper::formatPacketStats(reply, radio_driver, getNumSentFlood(), getNumSentDirect(),
+                                       getNumRecvFlood(), getNumRecvDirect(),
+                                       n_grp_relay_confirmed, n_grp_relay_failed);
 }
 
 void MyMesh::saveIdentity(const mesh::LocalIdentity &new_id) {
@@ -1191,6 +1268,8 @@ void MyMesh::clearStats() {
   radio_driver.resetStats();
   resetStats();
   ((SimpleMeshTables *)getTables())->resetStats();
+  n_grp_relay_confirmed = 0;
+  n_grp_relay_failed = 0;
 }
 
 void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply) {
@@ -1290,6 +1369,8 @@ void MyMesh::loop() {
 #endif
 
   mesh::Mesh::loop();
+
+  checkPendingGrpRelays();
 
   if (next_flood_advert && millisHasNowPassed(next_flood_advert)) {
     mesh::Packet *pkt = createSelfAdvert();

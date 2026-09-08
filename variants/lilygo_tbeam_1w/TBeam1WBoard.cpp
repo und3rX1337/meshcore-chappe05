@@ -1,5 +1,10 @@
 #include "TBeam1WBoard.h"
 
+// How long to keep the fan running after the last TX before switching it off
+// during RX, to let the 1W PA dissipate residual heat. Placeholder value -
+// tune based on real thermal testing (heavy TX duty cycle vs ambient temp).
+static constexpr uint32_t FAN_TX_COOLDOWN_MS = 30000;
+
 void TBeam1WBoard::begin() {
   ESP32Board::begin();
 
@@ -21,12 +26,37 @@ void TBeam1WBoard::begin() {
 }
 
 void TBeam1WBoard::onBeforeTransmit() {
-  // RF switching handled by RadioLib via SX126X_DIO2_AS_RF_SWITCH and setRfSwitchPins()
+  // LNA must be off during TX regardless of the FEM gain setting - this is
+  // unconditional, not gated by _fem_lna_enabled, to protect the LNA from
+  // the PA's output (DIO2 handles the PA-side switching separately).
+  digitalWrite(SX126X_RXEN, LOW);
+  setFanEnabled(true);   // PA is about to generate heat
+  _last_tx_millis = millis();
   digitalWrite(LED_PIN, HIGH);  // TX LED on
 }
 
 void TBeam1WBoard::onAfterTransmit() {
   digitalWrite(LED_PIN, LOW);   // TX LED off
+}
+
+void TBeam1WBoard::onBeforeReceive() {
+  digitalWrite(SX126X_RXEN, _fem_lna_enabled ? HIGH : LOW);
+  if (millis() - _last_tx_millis > FAN_TX_COOLDOWN_MS) {
+    setFanEnabled(false);  // idle listening, PA cooled down - save power
+  }
+}
+
+bool TBeam1WBoard::setLoRaFemLnaEnabled(bool enable) {
+  _fem_lna_enabled = enable;
+  return true;
+}
+
+bool TBeam1WBoard::canControlLoRaFemLna() const {
+  return true;
+}
+
+bool TBeam1WBoard::isLoRaFemLnaEnabled() const {
+  return _fem_lna_enabled;
 }
 
 uint16_t TBeam1WBoard::getBattMilliVolts() {
