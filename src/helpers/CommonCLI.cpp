@@ -707,6 +707,22 @@ void CommonCLI::handleSetCmd(uint32_t sender_timestamp, char* command, char* rep
     if (type >= 0 && type <= 15 && hops >= 0 && hops <= 64) {
       _prefs->flood_max_type[type] = (uint8_t)hops; savePrefs(); strcpy(reply, "OK");
     } else { strcpy(reply, "Error, use: flood.max.type <0-15> <0-64>"); }
+  } else if (memcmp(config, "prio.type ", 10) == 0) {
+    const char* a = &config[10];
+    int type = atoi(a);
+    const char* sp = strchr(a, ' ');
+    int pri = sp ? atoi(sp + 1) : -1;
+    if (type >= 0 && type <= 15 && pri >= 0 && pri <= 64) {
+      _prefs->prio_type[type] = (uint8_t)pri; savePrefs(); strcpy(reply, "OK");
+    } else { strcpy(reply, "Error, use: prio.type <0-15> <0-64>"); }
+  } else if (memcmp(config, "airtime.budget.type ", 20) == 0) {
+    const char* a = &config[20];
+    int type = atoi(a);
+    const char* sp = strchr(a, ' ');
+    int pct = sp ? atoi(sp + 1) : -1;
+    if (type >= 0 && type <= 15 && pct >= 0 && pct <= 100) {
+      _prefs->airtime_budget_type[type] = (uint8_t)pct; savePrefs(); strcpy(reply, "OK");
+    } else { strcpy(reply, "Error, use: airtime.budget.type <0-15> <0-100>"); }
   } else if (memcmp(config, "flood.max.unscoped ", 19) == 0) {
     uint8_t m = atoi(&config[19]);
     if (m <= 64) {
@@ -998,6 +1014,18 @@ void CommonCLI::handleGetCmd(uint32_t sender_timestamp, char* command, char* rep
     } else { char* w = reply; w += sprintf(w, ">");
       for (int t = 0; t < 16; t++) if (_prefs->flood_max_type[t]) w += sprintf(w, " %d=%d", t, (uint32_t)_prefs->flood_max_type[t]);
       if (w == reply + 1) strcpy(reply, "> (all inherit flood.max)"); }
+  } else if (memcmp(config, "prio.type", 9) == 0) {
+    if (config[9] == ' ') { int t = atoi(&config[10]);
+      if (t >= 0 && t <= 15) sprintf(reply, "> %d", (uint32_t)_prefs->prio_type[t]); else strcpy(reply, "Error, type 0-15");
+    } else { char* w = reply; w += sprintf(w, ">");
+      for (int t = 0; t < 16; t++) if (_prefs->prio_type[t]) w += sprintf(w, " %d=%d", t, (uint32_t)_prefs->prio_type[t]);
+      if (w == reply + 1) strcpy(reply, "> (all default)"); }
+  } else if (memcmp(config, "airtime.budget.type", 19) == 0) {
+    if (config[19] == ' ') { int t = atoi(&config[20]);
+      if (t >= 0 && t <= 15) sprintf(reply, "> %d%%", (uint32_t)_prefs->airtime_budget_type[t]); else strcpy(reply, "Error, type 0-15");
+    } else { char* w = reply; w += sprintf(w, ">");
+      for (int t = 0; t < 16; t++) if (_prefs->airtime_budget_type[t]) w += sprintf(w, " %d=%d%%", t, (uint32_t)_prefs->airtime_budget_type[t]);
+      if (w == reply + 1) strcpy(reply, "> (all uncapped)"); }
   } else if (memcmp(config, "flood.max.advert", 16) == 0) {
     sprintf(reply, "> %d", (uint32_t)_prefs->flood_max_advert);
   } else if (memcmp(config, "flood.max.unscoped", 18) == 0) {

@@ -105,6 +105,9 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
   unsigned long next_local_advert, next_flood_advert;
   bool _logging;
   NodePrefs _prefs;
+  uint32_t _class_budget_ms[16] = {0};   // QoS: remaining per-payload-type airtime tokens (ms)
+  uint32_t _class_budget_last = 0;       // QoS: last refill timestamp for the class buckets
+  void updateClassBudget();
   ClientACL  acl;
   CommonCLI _cli;
   uint8_t reply_data[MAX_PACKET_PAYLOAD];
@@ -168,6 +171,7 @@ protected:
   int calcRxDelay(float score, uint32_t air_time) const override;
 
   uint32_t getRetransmitDelay(const mesh::Packet* packet) override;
+  uint8_t getFloodPriority(const mesh::Packet* packet, uint8_t base_priority) override;
   uint32_t getDirectRetransmitDelay(const mesh::Packet* packet) override;
 
   int getInterferenceThreshold() const override {

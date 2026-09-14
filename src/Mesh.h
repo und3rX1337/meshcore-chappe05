@@ -60,6 +60,7 @@ protected:
    * \returns  number of milliseconds delay to apply to retransmitting the given packet.
    */
   virtual uint32_t getRetransmitDelay(const Packet* packet);
+  virtual uint8_t getFloodPriority(const Packet* packet, uint8_t base_priority);
 
   /**
    * \returns  number of milliseconds delay to apply to retransmitting the given packet, for DIRECT mode.

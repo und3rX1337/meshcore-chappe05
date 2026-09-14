@@ -14,6 +14,10 @@ void Mesh::loop() {
 bool Mesh::allowPacketForward(const mesh::Packet* packet) { 
   return false;  // by default, Transport NOT enabled
 }
+uint8_t Mesh::getFloodPriority(const mesh::Packet* packet, uint8_t base_priority) {
+  return base_priority;   // default: unchanged. Subclasses may bias priority by payload type (QoS).
+}
+
 uint32_t Mesh::getRetransmitDelay(const mesh::Packet* packet) { 
   uint32_t t = (_radio->getEstAirtimeFor(packet->getRawLength()) * 52 / 50) / 2;
 
@@ -350,8 +354,9 @@ DispatcherAction Mesh::routeRecvPacket(Packet* packet) {
     packet->setPathHashCount(n + 1);
 
     uint32_t d = getRetransmitDelay(packet);
-    // as this propagates outwards, give it lower and lower priority
-    return ACTION_RETRANSMIT_DELAYED(packet->getPathHashCount(), d);   // give priority to closer sources, than ones further away
+    // as this propagates outwards, give it lower and lower priority; a subclass may further bias by payload type (QoS)
+    uint8_t pri = getFloodPriority(packet, packet->getPathHashCount());
+    return ACTION_RETRANSMIT_DELAYED(pri, d);   // give priority to closer sources, than ones further away
   }
   return ACTION_RELEASE;
 }

@@ -431,6 +431,33 @@ void MyMesh::sendFloodReply(mesh::Packet* packet, unsigned long delay_millis, ui
   }
 }
 
+uint8_t MyMesh::getFloodPriority(const mesh::Packet *packet, uint8_t base_priority) {
+  // QoS: bias the flood retransmit priority by payload type. prio_type[t] == 0 leaves it unchanged;
+  // a positive value makes that type yield under queue contention (and be dropped first when full).
+  uint8_t t = packet->getPayloadType();
+  uint16_t p = (uint16_t)base_priority + _prefs.prio_type[t];
+  return (p > 254) ? 254 : (uint8_t)p;
+}
+
+void MyMesh::updateClassBudget() {
+  // QoS: continuously refill each per-type airtime bucket, mirroring Dispatcher::updateTxBudget but
+  // scaled to that type's configured share of the duty-cycle TX budget.
+  uint32_t now = _ms->getMillis();
+  uint32_t elapsed = now - _class_budget_last;
+  if (elapsed == 0) return;
+  float duty = 1.0f / (1.0f + getAirtimeBudgetFactor());
+  uint32_t window = getDutyCycleWindowMs();
+  for (int t = 0; t < 16; t++) {
+    uint8_t share = _prefs.airtime_budget_type[t];
+    if (share == 0) continue;
+    uint32_t maxb   = (uint32_t)((float)window  * duty * share / 100.0f);
+    uint32_t refill = (uint32_t)((float)elapsed * duty * share / 100.0f);
+    _class_budget_ms[t] += refill;
+    if (_class_budget_ms[t] > maxb) _class_budget_ms[t] = maxb;
+  }
+  _class_budget_last = now;
+}
+
 bool MyMesh::filterRecvFloodPacket(mesh::Packet *packet) {
   uint8_t payload_type = packet->getPayloadType();
 
@@ -468,6 +495,18 @@ bool MyMesh::filterRecvFloodPacket(mesh::Packet *packet) {
         return true;   // drop packets that were relayed via a blocked repeater
       }
     }
+  }
+
+  // QoS airtime shaping: cap each payload type at its configured share of the duty-cycle TX budget.
+  // Beyond that share, drop further flood packets of that type until the class bucket refills. 0 = uncapped.
+  uint8_t abt = _prefs.airtime_budget_type[payload_type];
+  if (abt != 0) {
+    updateClassBudget();
+    uint32_t est = _radio->getEstAirtimeFor(packet->getRawLength());
+    if (_class_budget_ms[payload_type] < est) {
+      return true;   // over this type's airtime budget -> shape by dropping
+    }
+    _class_budget_ms[payload_type] -= est;
   }
   return false;
 }
