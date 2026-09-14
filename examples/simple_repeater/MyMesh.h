@@ -108,6 +108,10 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
   uint32_t _class_budget_ms[16] = {0};   // QoS: remaining per-payload-type airtime tokens (ms)
   uint32_t _class_budget_last = 0;       // QoS: last refill timestamp for the class buckets
   void updateClassBudget();
+  uint32_t _drop_grp_data = 0;    // rejets : GRP_DATA hors liste blanche (grp.data.allow)
+  uint32_t _drop_blocklist = 0;   // rejets : nœud sur la blocklist
+  uint32_t _drop_hopcap = 0;      // rejets : plafond de sauts dépassé (flood.max.type)
+  uint32_t _drop_airtime[16] = {0}; // rejets QoS : budget d'airtime de classe dépassé, par type
   ClientACL  acl;
   CommonCLI _cli;
   uint8_t reply_data[MAX_PACKET_PAYLOAD];
@@ -244,6 +248,7 @@ public:
   void formatStatsReply(char *reply) override;
   void formatRadioStatsReply(char *reply) override;
   void formatPacketStatsReply(char *reply) override;
+  void formatFilterStatsReply(char *reply) override;
   void startRegionsLoad() override;
   bool saveRegions() override;
   void onDefaultRegionChanged(const RegionEntry* r) override;

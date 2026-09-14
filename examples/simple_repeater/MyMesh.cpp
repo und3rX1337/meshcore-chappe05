@@ -464,6 +464,7 @@ bool MyMesh::filterRecvFloodPacket(mesh::Packet *packet) {
   if (_prefs.grp_data_block && payload_type == PAYLOAD_TYPE_GRP_DATA) {
     uint8_t ch = (packet->payload_len > 0) ? packet->payload[0] : 0;   // channel hash (cleartext)
     if (!(_prefs.grp_data_allow[ch >> 3] & (1 << (ch & 7)))) {
+      _drop_grp_data++;
       return true;   // drop GRP_DATA unless its channel hash is on the allow-list (grp.data.allow)
     }
   }
@@ -472,6 +473,7 @@ bool MyMesh::filterRecvFloodPacket(mesh::Packet *packet) {
   // pre-signature-check), so a multi-byte prefix can be matched precisely.
   if (payload_type == PAYLOAD_TYPE_ADVERT && packet->payload_len >= PUB_KEY_SIZE
       && _prefs.isBlockedKeyPrefix(packet->payload, PUB_KEY_SIZE)) {
+    _drop_blocklist++;
     return true;   // drop adverts originated by a blocked repeater
   }
 
@@ -492,6 +494,7 @@ bool MyMesh::filterRecvFloodPacket(mesh::Packet *packet) {
     uint8_t first_hop = _prefs.block_last_hop_only && hop_count > 0 ? hop_count - 1 : 0;
     for (uint8_t h = first_hop; h < hop_count; h++) {
       if (_prefs.isBlockedKeyPrefix(&packet->path[h * hash_size], hash_size)) {
+        _drop_blocklist++;
         return true;   // drop packets that were relayed via a blocked repeater
       }
     }
@@ -504,6 +507,7 @@ bool MyMesh::filterRecvFloodPacket(mesh::Packet *packet) {
     updateClassBudget();
     uint32_t est = _radio->getEstAirtimeFor(packet->getRawLength());
     if (_class_budget_ms[payload_type] < est) {
+      _drop_airtime[payload_type]++;
       return true;   // over this type's airtime budget -> shape by dropping
     }
     _class_budget_ms[payload_type] -= est;
@@ -515,6 +519,7 @@ bool MyMesh::allowPacketForward(const mesh::Packet *packet) {
   if (_prefs.disable_fwd) return false;
   if (packet->isRouteFlood()
       && mesh::isFloodHopLimitExceeded(packet, _prefs.flood_max, _prefs.flood_max_unscoped, _prefs.flood_max_advert, _prefs.flood_max_type)) {
+    _drop_hopcap++;
     return false;
   }
   if (packet->isRouteFlood() && recv_pkt_region == NULL) {
@@ -1325,6 +1330,18 @@ void MyMesh::formatPacketStatsReply(char *reply) {
                                        n_grp_relay_confirmed, n_grp_relay_failed);
 }
 
+void MyMesh::formatFilterStatsReply(char *reply) {
+  uint32_t qfull = ((StaticPoolPacketManager *)_mgr)->getNumQueueFull();
+  uint32_t air_total = 0;
+  for (int t = 0; t < 16; t++) air_total += _drop_airtime[t];
+  char* w = reply;
+  w += sprintf(w, "drops grp_data=%u blocklist=%u hopcap=%u airtime=%u qfull=%u",
+               (unsigned)_drop_grp_data, (unsigned)_drop_blocklist, (unsigned)_drop_hopcap,
+               (unsigned)air_total, (unsigned)qfull);
+  for (int t = 0; t < 16; t++)
+    if (_drop_airtime[t]) w += sprintf(w, " air[%d]=%u", t, (unsigned)_drop_airtime[t]);
+}
+
 void MyMesh::saveIdentity(const mesh::LocalIdentity &new_id) {
 #if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM)
   IdentityStore store(*_fs, "");
@@ -1342,6 +1359,9 @@ void MyMesh::clearStats() {
   radio_driver.resetStats();
   resetStats();
   ((SimpleMeshTables *)getTables())->resetStats();
+  ((StaticPoolPacketManager *)_mgr)->resetQueueFull();
+  _drop_grp_data = _drop_blocklist = _drop_hopcap = 0;
+  for (int t = 0; t < 16; t++) _drop_airtime[t] = 0;
   n_grp_relay_confirmed = 0;
   n_grp_relay_failed = 0;
 }

@@ -20,9 +20,12 @@ public:
 
 class StaticPoolPacketManager : public mesh::PacketManager {
   PacketQueue unused, send_queue, rx_queue;
+  uint32_t _n_queue_full = 0;   // QoS: paquets jetés car la file d'envoi était pleine
 
 public:
   StaticPoolPacketManager(int pool_size);
+  uint32_t getNumQueueFull() const { return _n_queue_full; }
+  void resetQueueFull() { _n_queue_full = 0; }
 
   mesh::Packet* allocNew() override;
   void free(mesh::Packet* packet) override;
