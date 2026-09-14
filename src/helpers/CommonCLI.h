@@ -81,11 +81,14 @@ public:
   uint8_t path_hash_mode = 0;   // which path mode to use when sending
   uint8_t loop_detect = 0;
   uint8_t cad_enabled = 0;      // hardware Channel Activity Detection before TX (boolean)
+  // per-payload-type flood hop caps, indexed by getPayloadType() (0 = inherit flood_max)
+  uint8_t flood_max_type[16] = {0,0,0,0,0,12,6,0,0,0,8,0,0,0,0,6};
   uint8_t grp_relay_enable = 0;      // GRP_TXT/GRP_DATA relay confirmation + retry (boolean, default off)
   uint8_t grp_relay_timeout = 2;     // seconds to wait for a passive relay confirmation, before retrying
   uint8_t grp_relay_first_hop_only = 1; // only track/retry packets received directly (0 prior hops)
   uint8_t grp_relay_max_retries = 2; // extra re-broadcast attempts if no confirmation heard
   uint8_t grp_data_block = 1;   // drop GRP_DATA flood packets outright (boolean, default ON = blocked)
+  uint8_t grp_data_allow[32] = {0}; // 256-bit allow-list: channel hashes exempt from grp_data_block (0 = none)
   uint8_t block_last_hop_only = 1; // blocked_repeaters: 0 = match any hop in path, 1 = match only the immediate previous hop
   uint8_t block_all_types = 0; // 0 = only check GRP_TXT/GRP_DATA (safe default, admin traffic is never blocked)
                                 // 1 = also check admin/direct payload types (REQ, ANON_REQ, TXT_MSG, ...) --
@@ -183,12 +186,14 @@ private:
       def("f_max", _parent->flood_max);
       def("f_max_uns", _parent->flood_max_unscoped);
       def("f_max_adv", _parent->flood_max_advert);
+      def("f_max_type", _parent->flood_max_type, sizeof(_parent->flood_max_type));
       def("loop", _parent->loop_detect);
       def("gr_en", _parent->grp_relay_enable);
       def("gr_to", _parent->grp_relay_timeout);
       def("gr_1hop", _parent->grp_relay_first_hop_only);
       def("gr_retry", _parent->grp_relay_max_retries);
       def("gd_block", _parent->grp_data_block);
+      def("gd_allow", _parent->grp_data_allow, sizeof(_parent->grp_data_allow));
       def("block_lh_only", _parent->block_last_hop_only);
       def("block_all", _parent->block_all_types);
       def("block_keys", _parent->blocked_repeaters, sizeof(_parent->blocked_repeaters));

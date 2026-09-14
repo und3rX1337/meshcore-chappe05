@@ -435,7 +435,10 @@ bool MyMesh::filterRecvFloodPacket(mesh::Packet *packet) {
   uint8_t payload_type = packet->getPayloadType();
 
   if (_prefs.grp_data_block && payload_type == PAYLOAD_TYPE_GRP_DATA) {
-    return true;   // drop GRP_DATA packets outright, before processing or re-forwarding
+    uint8_t ch = (packet->payload_len > 0) ? packet->payload[0] : 0;   // channel hash (cleartext)
+    if (!(_prefs.grp_data_allow[ch >> 3] & (1 << (ch & 7)))) {
+      return true;   // drop GRP_DATA unless its channel hash is on the allow-list (grp.data.allow)
+    }
   }
 
   // ADVERT packets carry the sender's full public key in cleartext (payload[0..PUB_KEY_SIZE-1],
@@ -472,7 +475,7 @@ bool MyMesh::filterRecvFloodPacket(mesh::Packet *packet) {
 bool MyMesh::allowPacketForward(const mesh::Packet *packet) {
   if (_prefs.disable_fwd) return false;
   if (packet->isRouteFlood()
-      && mesh::isFloodHopLimitExceeded(packet, _prefs.flood_max, _prefs.flood_max_unscoped, _prefs.flood_max_advert)) {
+      && mesh::isFloodHopLimitExceeded(packet, _prefs.flood_max, _prefs.flood_max_unscoped, _prefs.flood_max_advert, _prefs.flood_max_type)) {
     return false;
   }
   if (packet->isRouteFlood() && recv_pkt_region == NULL) {
@@ -1012,6 +1015,7 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
   _prefs.flood_max = 64;
   _prefs.flood_max_unscoped = 64;
   _prefs.flood_max_advert = 8;
+  _prefs.flood_max_type[5]=12; _prefs.flood_max_type[6]=6; _prefs.flood_max_type[10]=8; _prefs.flood_max_type[15]=6; // GRP_TXT/GRP_DATA/MULTIPART/RAW_CUSTOM
   _prefs.interference_threshold = 0; // disabled
   _prefs.cad_enabled = 0;            // hardware CAD before TX (off by default; 'set cad on')
 

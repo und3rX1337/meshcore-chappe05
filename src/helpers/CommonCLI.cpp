@@ -699,6 +699,14 @@ void CommonCLI::handleSetCmd(uint32_t sender_timestamp, char* command, char* rep
     } else {
       strcpy(reply, "Error, must be 0-2");
     }
+  } else if (memcmp(config, "flood.max.type ", 15) == 0) {
+    const char* a = &config[15];
+    int type = atoi(a);
+    const char* sp = strchr(a, ' ');
+    int hops = sp ? atoi(sp + 1) : -1;
+    if (type >= 0 && type <= 15 && hops >= 0 && hops <= 64) {
+      _prefs->flood_max_type[type] = (uint8_t)hops; savePrefs(); strcpy(reply, "OK");
+    } else { strcpy(reply, "Error, use: flood.max.type <0-15> <0-64>"); }
   } else if (memcmp(config, "flood.max.unscoped ", 19) == 0) {
     uint8_t m = atoi(&config[19]);
     if (m <= 64) {
@@ -756,6 +764,17 @@ void CommonCLI::handleSetCmd(uint32_t sender_timestamp, char* command, char* rep
     _prefs->grp_data_block = atoi(&config[15]) ? 1 : 0;
     savePrefs();
     strcpy(reply, "OK");
+  } else if (memcmp(config, "grp.data.allow.clear", 20) == 0) {
+    memset(_prefs->grp_data_allow, 0, sizeof(_prefs->grp_data_allow));
+    savePrefs(); strcpy(reply, "OK");
+  } else if (memcmp(config, "grp.data.allow ", 15) == 0) {
+    long v = strtol(&config[15], NULL, 16);
+    if (v >= 0 && v <= 255) { _prefs->grp_data_allow[v >> 3] |= (1 << (v & 7)); savePrefs(); strcpy(reply, "OK"); }
+    else strcpy(reply, "Error, channel hash 00-FF (hex)");
+  } else if (memcmp(config, "grp.data.deny ", 14) == 0) {
+    long v = strtol(&config[14], NULL, 16);
+    if (v >= 0 && v <= 255) { _prefs->grp_data_allow[v >> 3] &= ~(1 << (v & 7)); savePrefs(); strcpy(reply, "OK"); }
+    else strcpy(reply, "Error, channel hash 00-FF (hex)");
   } else if (memcmp(config, "block.lasthop ", 14) == 0) {
     _prefs->block_last_hop_only = atoi(&config[14]) ? 1 : 0;
     savePrefs();
@@ -973,6 +992,12 @@ void CommonCLI::handleGetCmd(uint32_t sender_timestamp, char* command, char* rep
     sprintf(reply, "> %s", StrHelper::ftoa(_prefs->rx_delay_base));
   } else if (memcmp(config, "txdelay", 7) == 0) {
     sprintf(reply, "> %s", StrHelper::ftoa(_prefs->tx_delay_factor));
+  } else if (memcmp(config, "flood.max.type", 14) == 0) {
+    if (config[14] == ' ') { int t = atoi(&config[15]);
+      if (t >= 0 && t <= 15) sprintf(reply, "> %d", (uint32_t)_prefs->flood_max_type[t]); else strcpy(reply, "Error, type 0-15");
+    } else { char* w = reply; w += sprintf(w, ">");
+      for (int t = 0; t < 16; t++) if (_prefs->flood_max_type[t]) w += sprintf(w, " %d=%d", t, (uint32_t)_prefs->flood_max_type[t]);
+      if (w == reply + 1) strcpy(reply, "> (all inherit flood.max)"); }
   } else if (memcmp(config, "flood.max.advert", 16) == 0) {
     sprintf(reply, "> %d", (uint32_t)_prefs->flood_max_advert);
   } else if (memcmp(config, "flood.max.unscoped", 18) == 0) {
@@ -989,6 +1014,10 @@ void CommonCLI::handleGetCmd(uint32_t sender_timestamp, char* command, char* rep
     sprintf(reply, "> %d", (uint32_t)_prefs->grp_relay_max_retries);
   } else if (memcmp(config, "grp.data.block", 14) == 0) {
     sprintf(reply, "> %d", (uint32_t)_prefs->grp_data_block);
+  } else if (memcmp(config, "grp.data.allow", 14) == 0) {
+    char* w = reply; w += sprintf(w, ">");
+    for (int c = 0; c < 256; c++) if (_prefs->grp_data_allow[c >> 3] & (1 << (c & 7))) w += sprintf(w, " %02X", c);
+    if (w == reply + 1) strcpy(reply, "> (none)");
   } else if (memcmp(config, "block.lasthop", 13) == 0) {
     sprintf(reply, "> %d", (uint32_t)_prefs->block_last_hop_only);
   } else if (memcmp(config, "block.alltypes", 14) == 0) {
