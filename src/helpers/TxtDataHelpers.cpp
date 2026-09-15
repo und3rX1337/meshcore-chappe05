@@ -102,7 +102,7 @@ static void _ftoa(float f, char *p, int *status)
     *p++ = '0';
   else 
   {
-    p += sprintf(p, "%ld", (long)int_part);   // ltoa n'existe pas sur STM32 (newlib), sprintf est portable
+    p += sprintf(p, "%ld", (long)int_part);   // ltoa is not available on the STM32 toolchain (newlib); sprintf is portable
   }
   *p++ = '.';
   if (frac_part == 0)
