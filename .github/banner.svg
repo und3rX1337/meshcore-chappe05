@@ -26,7 +26,7 @@
 
   <!-- titre -->
   <text x="96" y="132" font-family="Archivo, Helvetica, Arial, sans-serif" font-size="72" font-weight="800" letter-spacing="-1.5" fill="#EDF0F5">Chappe 05</text>
-  <text x="99" y="170" font-family="'IBM Plex Mono', Menlo, Consolas, monospace" font-size="17" letter-spacing="3" fill="#4BAEDF">MESHCORE-CHAPPE05 · FIRMWARE LORA COMMUNAUTAIRE</text>
+  <text x="99" y="170" font-family="'IBM Plex Mono', Menlo, Consolas, monospace" font-size="17" letter-spacing="3" fill="#4BAEDF">MESHCORE-CHAPPE05 · COMMUNITY LORA FIRMWARE</text>
 
   <!-- brin de paquet : en-tete / transport / chemin / charge utile -->
   <g transform="translate(96,196)">
