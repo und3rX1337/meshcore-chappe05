@@ -298,7 +298,8 @@ elif [[ $1 == "get-companion-firmwares-to-build" ]]; then
   get_pio_envs_ending_with_string "_companion_radio_usb"
   get_pio_envs_ending_with_string "_companion_radio_ble"
 elif [[ $1 == "get-repeater-firmwares-to-build" ]]; then
-  get_pio_envs_ending_with_string "_repeater"
+  # wio-e5-mini excluded from CI: RadioLib fails to build against the recent STM32 Arduino core (PinMode/PinStatus typing); board not deployed on our network
+  get_pio_envs_ending_with_string "_repeater" | grep -v '^wio-e5-mini_repeater$'
 elif [[ $1 == "get-room-server-firmwares-to-build" ]]; then
   get_pio_envs_ending_with_string "_room_server"
 fi
