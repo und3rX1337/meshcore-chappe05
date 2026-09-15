@@ -4,6 +4,7 @@
 
 <br>
 
+[![Statut](https://img.shields.io/badge/statut-b%C3%AAta-F0A32A)](https://github.com/und3rX1337/meshcore-chappe05)
 [![Build répéteurs](https://github.com/und3rX1337/meshcore-chappe05/actions/workflows/build-repeater-firmwares.yml/badge.svg)](https://github.com/und3rX1337/meshcore-chappe05/actions/workflows/build-repeater-firmwares.yml)
 [![Site](https://img.shields.io/badge/site-chappe05.fr-4BAEDF)](https://chappe05.fr)
 [![Fork de](https://img.shields.io/badge/fork%20de-MeshCore-8794D4)](https://github.com/meshcore-dev/MeshCore)
@@ -13,6 +14,10 @@
 *MeshCore firmware fork for the Chappe 05 community LoRa mesh (Hautes-Alpes, France): per-packet-type filtering, QoS and observability for relays.*
 
 </div>
+
+> **Bêta.** Le réseau est en construction et les réglages par classe ne sont pas encore éprouvés sur le terrain. Les commandes, les valeurs par défaut et les images peuvent changer d'une version à l'autre.
+>
+> *Beta. The network is being built and the per-class settings are not yet field-proven. Commands, defaults and builds may change between versions.*
 
 ---
 

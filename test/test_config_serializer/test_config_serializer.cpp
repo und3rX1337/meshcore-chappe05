@@ -28,10 +28,7 @@ public:
 
 class MockPrintStream : public Stream {
     int len = 0;
-    // NodePrefs a grossi avec le filtrage par type et la QoS de Chappe 05 ; sa config
-    // sérialisée dépasse 1024 octets, alors qu'en production saveSerial écrit dans un
-    // flux fichier sans limite. On dimensionne le faux flux large pour le round-trip.
-    uint8_t _buf[4096];
+    uint8_t _buf[1024];
 
     size_t printSigned(long long value) {
         char text[24];
