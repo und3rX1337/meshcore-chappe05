@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 340" width="1280" height="340" role="img" aria-label="Chappe 05 - meshcore-chappe05">
+  <defs>
+    <linearGradient id="ciel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#171A21"/>
+      <stop offset="0.7" stop-color="#0E1014"/>
+      <stop offset="1" stop-color="#0E1014"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="340" fill="url(#ciel)"/>
+
+  <!-- ligne de cretes, motif du telegraphe Chappe -->
+  <polygon points="0,340 0,236 170,206 360,262 520,180 700,244 900,158 1090,224 1280,190 1280,340" fill="#2B3350" opacity="0.7"/>
+  <polygon points="0,340 0,280 190,256 380,290 560,232 760,282 960,224 1140,270 1280,240 1280,340" fill="#586487"/>
+
+  <!-- liaison de crete en crete -->
+  <polyline points="170,206 520,180 700,244 900,158 1090,224" fill="none" stroke="#4BAEDF" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="3 12" opacity="0.85"/>
+  <g>
+    <circle cx="170" cy="206" r="5" fill="#8794D4"/>
+    <circle cx="520" cy="180" r="5" fill="#8794D4"/>
+    <circle cx="700" cy="244" r="5" fill="#8794D4"/>
+    <circle cx="1090" cy="224" r="5" fill="#8794D4"/>
+    <circle cx="900" cy="158" r="7" fill="#F0A32A"/>
+    <circle cx="900" cy="158" r="15" fill="none" stroke="#F0A32A" stroke-width="1.6" opacity="0.5"/>
+  </g>
+
+  <!-- titre -->
+  <text x="96" y="132" font-family="Archivo, Helvetica, Arial, sans-serif" font-size="72" font-weight="800" letter-spacing="-1.5" fill="#EDF0F5">Chappe 05</text>
+  <text x="99" y="170" font-family="'IBM Plex Mono', Menlo, Consolas, monospace" font-size="17" letter-spacing="3" fill="#4BAEDF">MESHCORE-CHAPPE05 · FIRMWARE LORA COMMUNAUTAIRE</text>
+
+  <!-- brin de paquet : en-tete / transport / chemin / charge utile -->
+  <g transform="translate(96,196)">
+    <rect x="0"   y="0" width="34"  height="18" rx="4" fill="#FFCF7A"/>
+    <rect x="42"  y="0" width="104" height="18" rx="4" fill="#9EC6FF"/>
+    <rect x="154" y="0" width="34"  height="18" rx="4" fill="#D9B8FF"/>
+    <rect x="196" y="0" width="150" height="18" rx="4" fill="#8CE9BC"/>
+  </g>
+</svg>

@@ -1,170 +1,61 @@
-# meshcore-chappe05
+<div align="center">
 
-**FR —** Fork du firmware MeshCore pour le réseau LoRa communautaire Chappe 05 (Hautes-Alpes) : filtrage par type de paquet, qualité de service et observabilité des relais.
+<img src=".github/banner.svg" alt="Chappe 05, meshcore-chappe05, firmware LoRa communautaire" width="100%">
 
-**EN —** MeshCore firmware fork for the Chappe 05 community LoRa mesh (Hautes-Alpes, France): per-packet-type filtering, QoS and observability for relays.
+<br>
 
-Chappe 05 est un réseau LoRa communautaire en construction autour de Gap, du nom du télégraphe optique de Claude Chappe. Site du projet : https://chappe05.fr
+[![Build répéteurs](https://github.com/und3rX1337/meshcore-chappe05/actions/workflows/build-repeater-firmwares.yml/badge.svg)](https://github.com/und3rX1337/meshcore-chappe05/actions/workflows/build-repeater-firmwares.yml)
+[![Site](https://img.shields.io/badge/site-chappe05.fr-4BAEDF)](https://chappe05.fr)
+[![Fork de](https://img.shields.io/badge/fork%20de-MeshCore-8794D4)](https://github.com/meshcore-dev/MeshCore)
 
----
+**Fork du firmware MeshCore pour le réseau LoRa communautaire Chappe 05 (Hautes-Alpes) : filtrage par type de paquet, qualité de service et observabilité des relais.**
 
-## Ce que ce fork ajoute · What this fork adds
+*MeshCore firmware fork for the Chappe 05 community LoRa mesh (Hautes-Alpes, France): per-packet-type filtering, QoS and observability for relays.*
 
-Ce dépôt suit MeshCore en amont et y ajoute une couche de préservation du réseau, pensée pour un maillage partagé où un seul relais mal réglé peut gêner tout le monde.
-
-This repository tracks upstream MeshCore and adds a network-preservation layer, designed for a shared mesh where a single mis-configured relay can disrupt everyone.
-
-- **Filtrage par type de paquet** · per-payload-type hop caps — `set flood.max.type <type> <sauts>`
-- **Qualité de service** · QoS — `set prio.type` (priorité relative) et `set airtime.budget.type` (part de temps d'antenne, en % du budget de rapport cyclique)
-- **Contrôle des données de canal** · channel-data control — `set grp.data.block` / `set grp.data.allow`
-- **Observabilité** · observability — `stats-filter` restitue les paquets écartés par motif (données de canal, plafond de sauts, budget d'airtime, boucle)
-- **Preset radio épinglé** · pinned radio preset — `LORA_CR=8`, aligné sur le preset réseau 869,618 MHz · 62,5 kHz · SF8 · CR8
-
-## Outils · Tools
-
-- **Flasheur en ligne** · web flasher — https://chappe05.fr/flasher/
-- **Banc d'essai des paquets** · packet test bench — https://chappe05.fr/banc/
-- **Politique des relais** · relay policy — https://chappe05.fr/politique-relais/
-
-## Signaler un bug · Report a bug
-
-Ouvrez une *issue* sur ce dépôt. Pour proposer une correction, ouvrez une *pull request*.
-
-Open an *issue* on this repository. To propose a fix, open a *pull request*.
-
-## Amont · Upstream
-
-Basé sur MeshCore : https://github.com/meshcore-dev/MeshCore — licence et documentation d'origine conservées ci-dessous.
-
-Based on MeshCore: https://github.com/meshcore-dev/MeshCore — original license and documentation kept below.
+</div>
 
 ---
 
-## About MeshCore
+## Le projet
 
-MeshCore is a lightweight, portable C++ library that enables multi-hop packet routing for embedded projects using LoRa and other packet radios. It is designed for developers who want to create resilient, decentralized communication networks that work without the internet.
+Chappe 05 est un réseau LoRa communautaire en construction autour de Gap, du nom du télégraphe optique de Claude Chappe : une chaîne de tours sur les points hauts, chacune visible de la suivante, relayant un message de proche en proche. C'est la topologie du réseau, deux siècles plus tard, sur la bande 868 MHz.
 
-## 🔍 What is MeshCore?
+Ce dépôt suit MeshCore en amont et y ajoute une couche de préservation du réseau, pensée pour un maillage partagé où un seul relais mal réglé peut gêner tout le monde. L'objectif est de faire remonter ces fonctions dans le firmware officiel, pas de maintenir un fork parallèle.
 
-MeshCore now supports a range of LoRa devices, allowing for easy flashing without the need to compile firmware manually. Users can flash a pre-built binary using tools like Adafruit ESPTool and interact with the network through a serial console.
-MeshCore provides the ability to create wireless mesh networks, similar to Meshtastic and Reticulum but with a focus on lightweight multi-hop packet routing for embedded projects. Unlike Meshtastic, which is tailored for casual LoRa communication, or Reticulum, which offers advanced networking, MeshCore balances simplicity with scalability, making it ideal for custom embedded solutions, where devices (nodes) can communicate over long distances by relaying messages through intermediate nodes. This is especially useful in off-grid, emergency, or tactical situations where traditional communication infrastructure is unavailable.
+## Ce que ce fork ajoute
 
-## ⚡ Key Features
+| Fonction | Commande | Rôle |
+|---|---|---|
+| Plafonds de sauts par type | `set flood.max.type <type> <sauts>` | limiter la portée d'un type de paquet sans toucher aux autres |
+| Priorité par type | `set prio.type <type> <malus>` | faire céder le passage à un type quand la file est chargée |
+| Budget de temps d'antenne par type | `set airtime.budget.type <type> <pourcent>` | plafonner la part d'airtime d'un type, en pourcentage du budget de rapport cyclique |
+| Données de canal en inondation | `set grp.data.block`, `set grp.data.allow` | refuser les GRP_DATA inondés, rouvrir au cas par cas |
+| Observabilité du filtrage | `stats-filter` | compter les paquets écartés, par motif |
+| Preset radio épinglé | `LORA_CR=8` | aligner une installation neuve sur le preset réseau 869,618 MHz, 62,5 kHz, SF8, CR8 |
 
-* Multi-Hop Packet Routing
-  * Devices can forward messages across multiple nodes, extending range beyond a single radio's reach.
-  * Supports up to a configurable number of hops to balance network efficiency and prevent excessive traffic.
-  * Nodes use fixed roles where "Companion" nodes are not repeating messages at all to prevent adverse routing paths from being used.
-* Supports LoRa Radios – Works with Heltec, RAK Wireless, and other LoRa-based hardware.
-* Decentralized & Resilient – No central server or internet required; the network is self-healing.
-* Low Power Consumption – Ideal for battery-powered or solar-powered devices.
-* Simple to Deploy – Pre-built example applications make it easy to get started.
+Le socle de blocage par voisin (`block.add` et suivantes) et la confirmation passive de relais sont l'œuvre de Fabrice Crohas ; la couche de filtrage par type, la QoS et les compteurs ont été ajoutés par Chappe 05.
 
-## 🎯 What Can You Use MeshCore For?
+## Outils en ligne
 
-* Off-Grid Communication: Stay connected even in remote areas.
-* Emergency Response & Disaster Recovery: Set up instant networks where infrastructure is down.
-* Outdoor Activities: Hiking, camping, and adventure racing communication.
-* Tactical & Security Applications: Military, law enforcement, and private security use cases.
-* IoT & Sensor Networks: Collect data from remote sensors and relay it back to a central location.
+Tout se fait depuis le navigateur, sans rien installer, en WebSerial.
 
-## 🚀 How to Get Started
+| Outil | Adresse | Rôle |
+|---|---|---|
+| Flasheur | [chappe05.fr/flasher](https://chappe05.fr/flasher/) | installer le firmware et configurer un relais par catégories |
+| Banc d'essai | [chappe05.fr/banc](https://chappe05.fr/banc/) | forger, émettre et observer des paquets, mesurer le filtrage |
+| Politique des relais | [chappe05.fr/politique-relais](https://chappe05.fr/politique-relais/) | classes de relais, régions, réglages recommandés |
+| Guide de filtrage et de QoS | [chappe05.fr/flasher/firmware-securite-filtrage.html](https://chappe05.fr/flasher/firmware-securite-filtrage.html) | les commandes expliquées, avec schémas |
 
-- Watch the [MeshCore QuickStart Playlist](https://www.youtube.com/watch?v=iaFltojJrAc&list=PLshzThxhw4O4WU_iZo3NmNZOv6KMrUuF9) by The Comms Channel
-- Watch the [MeshCore Technical Presentation](https://www.youtube.com/watch?v=OwmkVkZQTf4) by Liam Cottle.
-- Read through our [Frequently Asked Questions](./docs/faq.md) and [Documentation](https://docs.meshcore.io).
-- Flash the MeshCore firmware on a supported device.
-- Connect with a supported client.
+## Démarrer
 
-For developers:
+Le plus simple est de passer par le [flasheur en ligne](https://chappe05.fr/flasher/) : il installe une image pré-compilée et configure la carte.
 
-- Install [PlatformIO](https://docs.platformio.org) in [Visual Studio Code](https://code.visualstudio.com).
-- Clone and open the MeshCore repository in Visual Studio Code.
-- See the example applications you can modify and run:
-  - [Companion Radio](./examples/companion_radio) - For use with an external chat app, over BLE, USB or Wi-Fi.
-  - [KISS Modem](./examples/kiss_modem) - Serial KISS protocol bridge for host applications. ([protocol docs](./docs/kiss_modem_protocol.md))
-  - [Simple Repeater](./examples/simple_repeater) - Extends network coverage by relaying messages.
-  - [Simple Room Server](./examples/simple_room_server) - A simple BBS server for shared Posts.
-  - [Simple Secure Chat](./examples/simple_secure_chat) - Secure terminal based text communication between devices.
-  - [Simple Sensor](./examples/simple_sensor) - Remote sensor node with telemetry and alerting.
+Pour compiler soi-même, ce dépôt reste un projet [PlatformIO](https://platformio.org/) comme MeshCore en amont. La documentation complète de la bibliothèque, la liste des cartes et les instructions de compilation sont maintenues côté amont : voir [meshcore-dev/MeshCore](https://github.com/meshcore-dev/MeshCore). Les images sont aussi produites automatiquement par les workflows de l'onglet [Actions](https://github.com/und3rX1337/meshcore-chappe05/actions).
 
-The Simple Secure Chat example can be interacted with through the Serial Monitor in Visual Studio Code, or with a Serial USB Terminal on Android.
+## Contribuer
 
-## ⚡️ MeshCore Flasher
+Un bug, une observation : ouvrez une [issue](https://github.com/und3rX1337/meshcore-chappe05/issues/new). Une correction, une amélioration : ouvrez une pull request. Les remarques d'opérateurs sont les bienvenues, c'est le terrain qui fait évoluer les réglages.
 
-We have prebuilt firmware ready to flash on supported devices.
+## Amont et crédits
 
-- Launch https://meshcore.io/flasher
-- Select a supported device
-- Flash one of the firmware types:
-  - Companion, Repeater or Room Server
-- Once flashing is complete, you can connect with one of the MeshCore clients below.
-
-## 📱 MeshCore Clients
-
-**Companion Firmware**
-
-The companion firmware can be connected to via BLE, USB or Wi-Fi depending on the firmware type you flashed.
-
-- Web: https://app.meshcore.nz
-- Android: https://play.google.com/store/apps/details?id=com.liamcottle.meshcore.android
-- iOS: https://apps.apple.com/us/app/meshcore/id6742354151?platform=iphone
-- NodeJS: https://github.com/liamcottle/meshcore.js
-- Python: https://github.com/fdlamotte/meshcore-cli
-
-**Repeater and Room Server Firmware**
-
-The repeater and room server firmware can be set up via USB in the web config tool.
-
-- https://config.meshcore.io
-
-They can also be managed via LoRa in the mobile app by using the Remote Management feature.
-
-## 🛠 Hardware Compatibility
-
-MeshCore is designed for devices listed in the [MeshCore Flasher](https://meshcore.io/flasher)
-
-## 📜 License
-
-MeshCore is open-source software released under the MIT License. You are free to use, modify, and distribute it for personal and commercial projects.
-
-## Contributing
-
-Please submit PR's using 'dev' as the base branch!
-For minor changes just submit your PR and we'll try to review it, but for anything more 'impactful' please open an Issue first and start a discussion. It is better to sound out what it is you want to achieve first, and try to come to a consensus on what the best approach is, especially when it impacts the structure or architecture of this codebase.
-
-Here are some general principles you should try to adhere to:
-* Keep it simple. Please, don't think like a high-level lang programmer. Think embedded, and keep code concise, without any unnecessary layers.
-* No dynamic memory allocation, except during setup/begin functions.
-* Use the same brace and indenting style that's in the core source modules. (A .clang-format is probably going to be added soon, but please do NOT retroactively re-format existing code. This just creates unnecessary diffs that make finding problems harder)
-
-Help us prioritize! Please react with thumbs-up to issues/PRs you care about most. We look at reaction counts when planning work.
-
-### Running unit tests
-
-To run unit tests, run the following command:
-
-```bash
-pio test --environment native --verbose
-```
-
-## Road-Map / To-Do
-
-There are a number of fairly major features in the pipeline, with no particular time-frames attached yet. In very rough chronological order:
-- [X] Companion radio: UI redesign
-- [X] Repeater + Room Server: add ACL's (like Sensor Node has)
-- [X] Standardise Bridge mode for repeaters
-- [ ] Repeater/Bridge: Standardise the Transport Codes for zoning/filtering
-- [X] Core + Repeater: enhanced zero-hop neighbour discovery
-- [ ] Core: round-trip manual path support
-- [ ] Companion + Apps: support for multiple sub-meshes (and 'off-grid' client repeat mode)
-- [ ] Core + Apps: support for LZW message compression
-- [ ] Core: dynamic CR (Coding Rate) for weak vs strong hops
-- [ ] Core: new framework for hosting multiple virtual nodes on one physical device
-- [ ] V2 protocol spec: discussion and consensus around V2 packet protocol, including path hashes, new encryption specs, etc
-
-## 📞 Get Support
-
-- Report bugs and request features on the [GitHub Issues](https://github.com/ripplebiz/MeshCore/issues) page.
-- Find additional guides and components on [my site](https://buymeacoffee.com/ripplebiz).
-- Join [MeshCore Discord](https://meshcore.gg) to chat with the developers and get help from the community.
+Basé sur [MeshCore](https://github.com/meshcore-dev/MeshCore) de Scott Powell (`meshcore-dev`), bibliothèque C++ légère de routage multi-sauts pour LoRa. Le code amont conserve sa licence et ses auteurs d'origine.
