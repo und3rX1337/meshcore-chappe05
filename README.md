@@ -1,3 +1,45 @@
+# meshcore-chappe05
+
+**FR —** Fork du firmware MeshCore pour le réseau LoRa communautaire Chappe 05 (Hautes-Alpes) : filtrage par type de paquet, qualité de service et observabilité des relais.
+
+**EN —** MeshCore firmware fork for the Chappe 05 community LoRa mesh (Hautes-Alpes, France): per-packet-type filtering, QoS and observability for relays.
+
+Chappe 05 est un réseau LoRa communautaire en construction autour de Gap, du nom du télégraphe optique de Claude Chappe. Site du projet : https://chappe05.fr
+
+---
+
+## Ce que ce fork ajoute · What this fork adds
+
+Ce dépôt suit MeshCore en amont et y ajoute une couche de préservation du réseau, pensée pour un maillage partagé où un seul relais mal réglé peut gêner tout le monde.
+
+This repository tracks upstream MeshCore and adds a network-preservation layer, designed for a shared mesh where a single mis-configured relay can disrupt everyone.
+
+- **Filtrage par type de paquet** · per-payload-type hop caps — `set flood.max.type <type> <sauts>`
+- **Qualité de service** · QoS — `set prio.type` (priorité relative) et `set airtime.budget.type` (part de temps d'antenne, en % du budget de rapport cyclique)
+- **Contrôle des données de canal** · channel-data control — `set grp.data.block` / `set grp.data.allow`
+- **Observabilité** · observability — `stats-filter` restitue les paquets écartés par motif (données de canal, plafond de sauts, budget d'airtime, boucle)
+- **Preset radio épinglé** · pinned radio preset — `LORA_CR=8`, aligné sur le preset réseau 869,618 MHz · 62,5 kHz · SF8 · CR8
+
+## Outils · Tools
+
+- **Flasheur en ligne** · web flasher — https://chappe05.fr/flasher/
+- **Banc d'essai des paquets** · packet test bench — https://chappe05.fr/banc/
+- **Politique des relais** · relay policy — https://chappe05.fr/politique-relais/
+
+## Signaler un bug · Report a bug
+
+Ouvrez une *issue* sur ce dépôt. Pour proposer une correction, ouvrez une *pull request*.
+
+Open an *issue* on this repository. To propose a fix, open a *pull request*.
+
+## Amont · Upstream
+
+Basé sur MeshCore : https://github.com/meshcore-dev/MeshCore — licence et documentation d'origine conservées ci-dessous.
+
+Based on MeshCore: https://github.com/meshcore-dev/MeshCore — original license and documentation kept below.
+
+---
+
 ## About MeshCore
 
 MeshCore is a lightweight, portable C++ library that enables multi-hop packet routing for embedded projects using LoRa and other packet radios. It is designed for developers who want to create resilient, decentralized communication networks that work without the internet.
