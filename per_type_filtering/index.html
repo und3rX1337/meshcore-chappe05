@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://meshcore-dev.github.io/meshcore/number_allocations/">
+        <link rel="canonical" href="https://meshcore-dev.github.io/meshcore/per_type_filtering/">
       
       
-        <link rel="prev" href="../nrf52_power_management/">
+        <link rel="prev" href="../payloads/">
       
       
-        <link rel="next" href="../packet_format/">
+        <link rel="next" href="../qr_codes/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Number Allocations - MeshCore Docs</title>
+        <title>Per-type packet filtering (uniform model) - MeshCore Docs</title>
       
     
     
@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#number-allocations" class="md-skip">
+        <a href="#per-type-packet-filtering-uniform-model" class="md-skip">
           Skip to content
         </a>
       
@@ -105,7 +105,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Number Allocations
+              Per-type packet filtering (uniform model)
             
           </span>
         </div>
@@ -412,19 +412,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../number_allocations/" class="md-nav__link">
         
   
   
@@ -440,7 +431,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -503,10 +493,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../per_type_filtering/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Per-type packet filtering (uniform model)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -522,6 +539,148 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#current-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current state
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Current state">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-floodmaxtype-is-not-a-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why flood.max.type is not a block
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-flood-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The flood pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#proposal-generalize-block-and-allow-to-every-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proposal: generalize block and allow to every type
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Proposal: generalize block and allow to every type">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-allow-list-needs-a-cleartext-discriminator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The allow-list needs a cleartext discriminator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backward-compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backward compatibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guardrail-for-structural-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guardrail for structural types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-does-not-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this does NOT change
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#upstreaming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upstreaming
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -627,6 +786,136 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#current-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current state
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Current state">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-floodmaxtype-is-not-a-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why flood.max.type is not a block
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-flood-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The flood pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#proposal-generalize-block-and-allow-to-every-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proposal: generalize block and allow to every type
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Proposal: generalize block and allow to every type">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-allow-list-needs-a-cleartext-discriminator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The allow-list needs a cleartext discriminator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backward-compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backward compatibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guardrail-for-structural-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guardrail for structural types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-does-not-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this does NOT change
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#upstreaming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upstreaming
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -642,7 +931,7 @@
 
 
   
-    <a href="https://github.com/meshcore-dev/meshcore/edit/main/docs/number_allocations.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/meshcore-dev/meshcore/edit/main/docs/per_type_filtering.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -650,55 +939,133 @@
   
 
 
-<h1 id="number-allocations">Number Allocations</h1>
-<p>This document lists unique numbers/identifiers used in various MeshCore protocol payloads.</p>
-<h1 id="group-data-types">Group Data Types</h1>
-<p>The <code>PAYLOAD_TYPE_GRP_DATA</code> payloads have a 16-bit data-type field, which identifies which application the packet is for.</p>
-<p>To make sure multiple applications can function without interfering with each other, the table below is for reserving various ranges of data-type values. Just modify this table, adding a row, then submit a PR to have it authorised/merged.</p>
-<p>NOTE: the range FF00 - FFFF is for use while you're developing, doing POC, and for these you don't need to request to use/allocate.</p>
-<p>Once you have a working app/project, you need to be able to demonstrate it exists/works, and THEN request type IDs. So, just use the testing/dev range while developing, then request IDs before you transition to publishing your project.</p>
+<h1 id="per-type-packet-filtering-uniform-model">Per-type packet filtering (uniform model)</h1>
+<p>A repeater decides whether to forward a flood packet from the <strong>header alone</strong>, without
+ever decrypting the payload. MeshCore carries sixteen payload types, and the repeater can
+already shape most of them per type. But one control is asymmetric: only a single type,
+<code>GRP_DATA</code>, has a real on/off block. Every other type has only a distance cap that never
+fully stops it.</p>
+<p>This is an accident of history, not a design choice. This document specifies a <strong>uniform
+model</strong>: a type is a type, and every type exposes the same set of levers. The special
+handling of one type becomes a single default in a general grid.</p>
+<h2 id="current-state">Current state</h2>
+<p>For all sixteen types:</p>
+<ul>
+<li><code>flood.max.type &lt;t&gt; &lt;n&gt;</code> : per-type hop cap (distance).</li>
+<li><code>prio.type &lt;t&gt; &lt;n&gt;</code> : per-type priority under load.</li>
+<li><code>airtime.budget.type &lt;t&gt; &lt;n&gt;</code> : per-type airtime share.</li>
+</ul>
+<p>For the single type <code>GRP_DATA</code> (6) only:</p>
+<ul>
+<li><code>grp.data.block &lt;0|1&gt;</code> : hard block (drop at zero hops).</li>
+<li><code>grp.data.allow &lt;hash&gt;</code> : per-channel allow-list exception.</li>
+</ul>
+<p>Per node (not per type):</p>
+<ul>
+<li><code>block.add/remove/clear/list</code>, <code>block.lasthop</code>, <code>block.alltypes</code> : the blocklist.</li>
+</ul>
+<h3 id="why-floodmaxtype-is-not-a-block">Why <code>flood.max.type</code> is not a block</h3>
+<p><code>isFloodHopLimitExceeded()</code> in <code>src/helpers/RoutingPolicy.h</code> tests
+<code>flood_max_type[t] != 0 &amp;&amp; hops &gt;= flood_max_type[t]</code>. So:</p>
+<ul>
+<li>value <code>0</code> means <strong>inherit <code>flood.max</code></strong>, not "blocked";</li>
+<li>the smallest useful cap, <code>1</code>, still forwards a fresh packet once (<code>hops 0 &gt;= 1</code> is false).</li>
+</ul>
+<p>There is therefore no value of <code>flood.max.type</code> that fully stops a type. Only a true block
+does that, and today only <code>GRP_DATA</code> has one.</p>
+<h2 id="the-flood-pipeline">The flood pipeline</h2>
+<p>Order of checks for a flood packet (<code>isRouteFlood()</code> true). Direct packets bypass all of it
+and follow their recorded path; administration of the node is a separate path, gated by the
+ACL (<code>setperm</code>).</p>
+<pre><code>filterRecvFloodPacket():
+  1. per-type block        grp.data.block / grp.data.allow   -&gt; drop [grp_data]   (type 6 only, today)
+  2. blocklist             ADVERT by public key, GRP_TXT/GRP_DATA (or all, if block.alltypes) by path hop
+                                                             -&gt; drop [blocklist]
+  3. airtime budget        airtime.budget.type[t]            -&gt; drop [airtime]
+allowPacketForward():
+  4. hop cap               flood.max / .unscoped / .advert / .type[t] -&gt; drop [hopcap]
+  5. region scope          unknown transport code            -&gt; drop
+  6. loop detection        loop.detect                       -&gt; drop
+  7. send queue            full                              -&gt; drop [qfull]
+  -&gt; forwarded
+</code></pre>
+<h2 id="proposal-generalize-block-and-allow-to-every-type">Proposal: generalize block and allow to every type</h2>
+<p>Two commands, applied to any type index:</p>
 <table>
 <thead>
 <tr>
-<th>Data-Type range</th>
-<th>App name</th>
-<th>Contact</th>
+<th>Command</th>
+<th>Role</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>0000 - 00FF</td>
-<td>-reserved for internal use-</td>
-<td></td>
+<td><code>set block.type &lt;0-15&gt; &lt;0\|1&gt;</code></td>
+<td>hard block for any payload type (drop at zero hops)</td>
 </tr>
 <tr>
-<td>0100</td>
-<td>MeshCore Open</td>
-<td>zsylvester@monitormx.com — https://github.com/zjs81/meshcore-open</td>
-</tr>
-<tr>
-<td>0110 - 011F</td>
-<td>Ripple</td>
-<td>ripple_biz@protonmail.com — https://buymeacoffee.com/ripplebiz</td>
-</tr>
-<tr>
-<td>0120</td>
-<td>MCO Advanced</td>
-<td>most.original.address@gmail.com — https://hdden.ru/MCOa/</td>
-</tr>
-<tr>
-<td>0130 - 013F</td>
-<td>StreamSensor</td>
-<td>william@housedillon.com - https://housedillon.com/blog/lora-e5-with-seeed-fusion</td>
-</tr>
-<tr>
-<td>FF00 - FFFF</td>
-<td>-reserved for testing/dev-</td>
-<td></td>
+<td><code>set allow.type &lt;0-15&gt; &lt;id&gt;</code></td>
+<td>allow-list exception, for types that carry a cleartext discriminator</td>
 </tr>
 </tbody>
 </table>
-<p>(add rows, inside the range 0100 - FEFF for custom apps)</p>
+<p>With <code>get block.type</code> and <code>get allow.type</code>, matching the existing <code>get</code> conventions.</p>
+<h3 id="the-allow-list-needs-a-cleartext-discriminator">The allow-list needs a cleartext discriminator</h3>
+<p>An allow-list can only re-admit a flow if the packet exposes an identifier the repeater can
+read <strong>without decrypting</strong>. Not every type carries one. This is the only real constraint,
+and it is physical, not arbitrary.</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Cleartext discriminator</th>
+<th><code>allow.type</code> meaningful</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GRP_TXT</code> (5), <code>GRP_DATA</code> (6)</td>
+<td>channel hash (<code>payload[0]</code>)</td>
+<td>yes, per channel</td>
+</tr>
+<tr>
+<td><code>ADVERT</code> (4)</td>
+<td>sender public key</td>
+<td>yes, per node (this is the blocklist)</td>
+</tr>
+<tr>
+<td><code>REQ</code>, <code>RESPONSE</code>, <code>ACK</code>, <code>TXT_MSG</code>, <code>PATH</code>, <code>CONTROL</code>, ...</td>
+<td>none</td>
+<td>no, block is all-or-nothing</td>
+</tr>
+</tbody>
+</table>
+<p>The model stays uniform: the allow-list is simply empty where there is nothing to key on,
+and the on/off block applies to every type without exception.</p>
+<h3 id="backward-compatibility">Backward compatibility</h3>
+<ul>
+<li><code>grp.data.block</code> becomes an alias of <code>block.type 6</code>, <code>grp.data.allow</code> an alias of
+  <code>allow.type 6</code>. Existing scripts and stored preferences keep working unchanged.</li>
+<li>Defaults are unchanged: only <code>GRP_DATA</code> (type 6) is blocked by default, every other type
+  passes. Upgrading changes no behaviour.</li>
+</ul>
+<h3 id="guardrail-for-structural-types">Guardrail for structural types</h3>
+<p>Some types keep the mesh alive: <code>ADVERT</code> (4) drives discovery, <code>PATH</code> (8) and <code>ACK</code> (3)
+drive routing, <code>CONTROL</code> (11) drives coordination. Blocking them breaks the network.
+<code>block.type</code> must refuse or warn on these types. <code>flood.max.type</code> has no such guard today.</p>
+<h2 id="what-this-does-not-change">What this does NOT change</h2>
+<p>The generalization touches only the <code>GRP_DATA</code> block, and even then only to subsume it into
+the general form with identical behaviour. Everything else stays as is:</p>
+<ul>
+<li>the blocklist (<code>block.*</code>) is untouched;</li>
+<li>the group relay confirmation (<code>grp.relay.*</code>) is untouched.</li>
+</ul>
+<h2 id="validation">Validation</h2>
+<p>Nothing here is tuned by guesswork. Each tightening is measured on the bench by reading the
+repeater's <code>stats-filter</code> drop counters before and after. A filter that drops nothing is
+useless; a filter that drops everything cuts the network. The counters decide.</p>
+<h2 id="upstreaming">Upstreaming</h2>
+<p>The intent is to propose this model to <code>meshcore-dev</code>, not to keep a parallel fork.</p>
 
 
 
