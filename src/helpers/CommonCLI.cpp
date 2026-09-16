@@ -793,6 +793,34 @@ void CommonCLI::handleSetCmd(uint32_t sender_timestamp, char* command, char* rep
     long v = strtol(&config[14], NULL, 16);
     if (v >= 0 && v <= 255) { _prefs->grp_data_allow[v >> 3] &= ~(1 << (v & 7)); savePrefs(); strcpy(reply, "OK"); }
     else strcpy(reply, "Error, channel hash 00-FF (hex)");
+  } else if (memcmp(config, "block.type ", 11) == 0) {
+    const char* a = &config[11];
+    int type = atoi(a);
+    const char* sp = strchr(a, ' ');
+    int on = sp ? atoi(sp + 1) : -1;
+    if (type < 0 || type > 15 || on < 0 || on > 1) {
+      strcpy(reply, "Error, use: block.type <0-15> <0|1>");
+    } else if (type == 3 || type == 4 || type == 8 || type == 11) {  // ACK, ADVERT, PATH, CONTROL are structural
+      strcpy(reply, "Error, refusing to block a structural type (ACK/ADVERT/PATH/CONTROL)");
+    } else {
+      if (type == 6) _prefs->grp_data_block = (uint8_t)on;  // type 6 (GRP_DATA) aliases grp_data_block
+      else _prefs->block_type[type] = (uint8_t)on;
+      savePrefs(); strcpy(reply, "OK");
+    }
+  } else if (memcmp(config, "allow.type.clear ", 17) == 0) {
+    int type = atoi(&config[17]);
+    if (type == 6) { memset(_prefs->grp_data_allow, 0, sizeof(_prefs->grp_data_allow)); savePrefs(); strcpy(reply, "OK"); }
+    else if (type == 5) { memset(_prefs->grp_txt_allow, 0, sizeof(_prefs->grp_txt_allow)); savePrefs(); strcpy(reply, "OK"); }
+    else strcpy(reply, "Error, allow-list only for channel types 5 (GRP_TXT) or 6 (GRP_DATA)");
+  } else if (memcmp(config, "allow.type ", 11) == 0) {
+    const char* a = &config[11];
+    int type = atoi(a);
+    const char* sp = strchr(a, ' ');
+    long v = sp ? strtol(sp + 1, NULL, 16) : -1;
+    uint8_t* list = (type == 6) ? _prefs->grp_data_allow : (type == 5) ? _prefs->grp_txt_allow : NULL;
+    if (list == NULL) strcpy(reply, "Error, allow-list only for channel types 5 (GRP_TXT) or 6 (GRP_DATA)");
+    else if (v >= 0 && v <= 255) { list[v >> 3] |= (1 << (v & 7)); savePrefs(); strcpy(reply, "OK"); }
+    else strcpy(reply, "Error, channel hash 00-FF (hex)");
   } else if (memcmp(config, "block.lasthop ", 14) == 0) {
     _prefs->block_last_hop_only = atoi(&config[14]) ? 1 : 0;
     savePrefs();
@@ -1048,6 +1076,20 @@ void CommonCLI::handleGetCmd(uint32_t sender_timestamp, char* command, char* rep
     char* w = reply; w += sprintf(w, ">");
     for (int c = 0; c < 256; c++) if (_prefs->grp_data_allow[c >> 3] & (1 << (c & 7))) w += sprintf(w, " %02X", c);
     if (w == reply + 1) strcpy(reply, "> (none)");
+  } else if (memcmp(config, "block.type", 10) == 0) {
+    if (config[10] == ' ') { int t = atoi(&config[11]);
+      if (t < 0 || t > 15) strcpy(reply, "Error, type 0-15");
+      else sprintf(reply, "> %d", (uint32_t)(t == 6 ? _prefs->grp_data_block : _prefs->block_type[t]));
+    } else { char* w = reply; w += sprintf(w, ">");
+      for (int t = 0; t < 16; t++) { uint8_t on = (t == 6) ? _prefs->grp_data_block : _prefs->block_type[t]; if (on) w += sprintf(w, " %d", t); }
+      if (w == reply + 1) strcpy(reply, "> (none)"); }
+  } else if (memcmp(config, "allow.type", 10) == 0) {
+    int t = (config[10] == ' ') ? atoi(&config[11]) : -1;
+    const uint8_t* list = (t == 6) ? _prefs->grp_data_allow : (t == 5) ? _prefs->grp_txt_allow : NULL;
+    if (list == NULL) strcpy(reply, "Error, use: get allow.type <5|6>");
+    else { char* w = reply; w += sprintf(w, ">");
+      for (int c = 0; c < 256; c++) if (list[c >> 3] & (1 << (c & 7))) w += sprintf(w, " %02X", c);
+      if (w == reply + 1) strcpy(reply, "> (none)"); }
   } else if (memcmp(config, "block.lasthop", 13) == 0) {
     sprintf(reply, "> %d", (uint32_t)_prefs->block_last_hop_only);
   } else if (memcmp(config, "block.alltypes", 14) == 0) {

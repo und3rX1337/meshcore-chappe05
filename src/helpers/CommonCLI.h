@@ -89,6 +89,8 @@ public:
   uint8_t grp_relay_max_retries = 2; // extra re-broadcast attempts if no confirmation heard
   uint8_t grp_data_block = 1;   // drop GRP_DATA flood packets outright (boolean, default ON = blocked)
   uint8_t grp_data_allow[32] = {0}; // 256-bit allow-list: channel hashes exempt from grp_data_block (0 = none)
+  uint8_t block_type[16] = {0};     // per-type hard block; type 6 (GRP_DATA) keeps grp_data_block for back-compat, structural types (ACK/ADVERT/PATH/CONTROL) are refused by the CLI
+  uint8_t grp_txt_allow[32] = {0};  // 256-bit allow-list: channel hashes exempt from a GRP_TXT block (mirror of grp_data_allow)
   // QoS -- per-payload-type priority offset added to the flood retransmit priority (0 = unchanged;
   // higher = this type yields to others under queue contention, and is dropped first when the queue is full)
   uint8_t prio_type[16] = {0};
@@ -200,6 +202,8 @@ private:
       def("gr_retry", _parent->grp_relay_max_retries);
       def("gd_block", _parent->grp_data_block);
       def("gd_allow", _parent->grp_data_allow, sizeof(_parent->grp_data_allow));
+      def("block_type", _parent->block_type, sizeof(_parent->block_type));
+      def("gt_allow", _parent->grp_txt_allow, sizeof(_parent->grp_txt_allow));
       def("prio_type", _parent->prio_type, sizeof(_parent->prio_type));
       def("air_bt", _parent->airtime_budget_type, sizeof(_parent->airtime_budget_type));
       def("block_lh_only", _parent->block_last_hop_only);
