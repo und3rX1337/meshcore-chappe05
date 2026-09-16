@@ -474,7 +474,7 @@ bool MyMesh::filterRecvFloodPacket(mesh::Packet *packet) {
       exempt = (allow[ch >> 3] & (1 << (ch & 7))) != 0;
     }
     if (!exempt) {
-      if (payload_type == PAYLOAD_TYPE_GRP_DATA) _drop_grp_data++; else _drop_type_block++;
+      if (payload_type == PAYLOAD_TYPE_GRP_DATA) _drop_grp_data++; else _drop_block[payload_type]++;
       return true;   // type blocked (allow-list exemption applies to channel types only)
     }
   }
@@ -1342,12 +1342,14 @@ void MyMesh::formatPacketStatsReply(char *reply) {
 
 void MyMesh::formatFilterStatsReply(char *reply) {
   uint32_t qfull = ((StaticPoolPacketManager *)_mgr)->getNumQueueFull();
-  uint32_t air_total = 0;
-  for (int t = 0; t < 16; t++) air_total += _drop_airtime[t];
+  uint32_t air_total = 0, block_total = 0;
+  for (int t = 0; t < 16; t++) { air_total += _drop_airtime[t]; block_total += _drop_block[t]; }
   char* w = reply;
   w += sprintf(w, "drops grp_data=%u typeblock=%u blocklist=%u hopcap=%u airtime=%u qfull=%u",
-               (unsigned)_drop_grp_data, (unsigned)_drop_type_block, (unsigned)_drop_blocklist, (unsigned)_drop_hopcap,
+               (unsigned)_drop_grp_data, (unsigned)block_total, (unsigned)_drop_blocklist, (unsigned)_drop_hopcap,
                (unsigned)air_total, (unsigned)qfull);
+  for (int t = 0; t < 16; t++)
+    if (_drop_block[t]) w += sprintf(w, " block[%d]=%u", t, (unsigned)_drop_block[t]);
   for (int t = 0; t < 16; t++)
     if (_drop_airtime[t]) w += sprintf(w, " air[%d]=%u", t, (unsigned)_drop_airtime[t]);
 }
@@ -1370,8 +1372,8 @@ void MyMesh::clearStats() {
   resetStats();
   ((SimpleMeshTables *)getTables())->resetStats();
   ((StaticPoolPacketManager *)_mgr)->resetQueueFull();
-  _drop_grp_data = _drop_type_block = _drop_blocklist = _drop_hopcap = 0;
-  for (int t = 0; t < 16; t++) _drop_airtime[t] = 0;
+  _drop_grp_data = _drop_blocklist = _drop_hopcap = 0;
+  for (int t = 0; t < 16; t++) { _drop_airtime[t] = 0; _drop_block[t] = 0; }
   n_grp_relay_confirmed = 0;
   n_grp_relay_failed = 0;
 }
