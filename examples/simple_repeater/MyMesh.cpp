@@ -461,11 +461,21 @@ void MyMesh::updateClassBudget() {
 bool MyMesh::filterRecvFloodPacket(mesh::Packet *packet) {
   uint8_t payload_type = packet->getPayloadType();
 
-  if (_prefs.grp_data_block && payload_type == PAYLOAD_TYPE_GRP_DATA) {
-    uint8_t ch = (packet->payload_len > 0) ? packet->payload[0] : 0;   // channel hash (cleartext)
-    if (!(_prefs.grp_data_allow[ch >> 3] & (1 << (ch & 7)))) {
-      _drop_grp_data++;
-      return true;   // drop GRP_DATA unless its channel hash is on the allow-list (grp.data.allow)
+  // Per-type hard block. Type 6 (GRP_DATA) keeps its own flag for back-compat; every other type
+  // uses block_type[]. Channel types (GRP_TXT/GRP_DATA) can exempt a channel via an allow-list.
+  bool type_blocked = (payload_type == PAYLOAD_TYPE_GRP_DATA)
+                        ? _prefs.grp_data_block : _prefs.block_type[payload_type];
+  if (type_blocked) {
+    const uint8_t* allow = (payload_type == PAYLOAD_TYPE_GRP_DATA) ? _prefs.grp_data_allow
+                         : (payload_type == PAYLOAD_TYPE_GRP_TXT)  ? _prefs.grp_txt_allow : nullptr;
+    bool exempt = false;
+    if (allow != nullptr && packet->payload_len > 0) {
+      uint8_t ch = packet->payload[0];   // channel hash (cleartext)
+      exempt = (allow[ch >> 3] & (1 << (ch & 7))) != 0;
+    }
+    if (!exempt) {
+      if (payload_type == PAYLOAD_TYPE_GRP_DATA) _drop_grp_data++; else _drop_type_block++;
+      return true;   // type blocked (allow-list exemption applies to channel types only)
     }
   }
 
@@ -1335,8 +1345,8 @@ void MyMesh::formatFilterStatsReply(char *reply) {
   uint32_t air_total = 0;
   for (int t = 0; t < 16; t++) air_total += _drop_airtime[t];
   char* w = reply;
-  w += sprintf(w, "drops grp_data=%u blocklist=%u hopcap=%u airtime=%u qfull=%u",
-               (unsigned)_drop_grp_data, (unsigned)_drop_blocklist, (unsigned)_drop_hopcap,
+  w += sprintf(w, "drops grp_data=%u typeblock=%u blocklist=%u hopcap=%u airtime=%u qfull=%u",
+               (unsigned)_drop_grp_data, (unsigned)_drop_type_block, (unsigned)_drop_blocklist, (unsigned)_drop_hopcap,
                (unsigned)air_total, (unsigned)qfull);
   for (int t = 0; t < 16; t++)
     if (_drop_airtime[t]) w += sprintf(w, " air[%d]=%u", t, (unsigned)_drop_airtime[t]);
@@ -1360,7 +1370,7 @@ void MyMesh::clearStats() {
   resetStats();
   ((SimpleMeshTables *)getTables())->resetStats();
   ((StaticPoolPacketManager *)_mgr)->resetQueueFull();
-  _drop_grp_data = _drop_blocklist = _drop_hopcap = 0;
+  _drop_grp_data = _drop_type_block = _drop_blocklist = _drop_hopcap = 0;
   for (int t = 0; t < 16; t++) _drop_airtime[t] = 0;
   n_grp_relay_confirmed = 0;
   n_grp_relay_failed = 0;

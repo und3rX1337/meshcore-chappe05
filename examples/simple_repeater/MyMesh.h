@@ -109,6 +109,7 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
   uint32_t _class_budget_last = 0;       // QoS: last refill timestamp for the class buckets
   void updateClassBudget();
   uint32_t _drop_grp_data = 0;    // rejets : GRP_DATA hors liste blanche (grp.data.allow)
+  uint32_t _drop_type_block = 0;  // rejets : type bloque par block.type (hors GRP_DATA)
   uint32_t _drop_blocklist = 0;   // rejets : nœud sur la blocklist
   uint32_t _drop_hopcap = 0;      // rejets : plafond de sauts dépassé (flood.max.type)
   uint32_t _drop_airtime[16] = {0}; // rejets QoS : budget d'airtime de classe dépassé, par type
