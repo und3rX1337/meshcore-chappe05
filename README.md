@@ -10,6 +10,7 @@
 [![Build repeaters](https://github.com/und3rX1337/meshcore-chappe05/actions/workflows/build-repeater-firmwares.yml/badge.svg)](https://github.com/und3rX1337/meshcore-chappe05/actions/workflows/build-repeater-firmwares.yml)
 [![Site](https://img.shields.io/badge/site-chappe05.fr-4BAEDF)](https://chappe05.fr)
 [![Fork of](https://img.shields.io/badge/fork%20of-MeshCore-8794D4)](https://github.com/meshcore-dev/MeshCore)
+[![Upstream](https://img.shields.io/badge/based%20on-MeshCore%20v1.18.0-8794D4)](https://github.com/meshcore-dev/MeshCore/releases/tag/repeater-v1.18.0)
 
 **MeshCore firmware fork for the Chappe 05 community LoRa mesh (Hautes-Alpes, France): per-packet-type filtering, QoS and observability for relays.**
 
@@ -23,20 +24,27 @@
 
 Chappe 05 is a community LoRa network being built around Gap, in the French Hautes-Alpes, named after Claude Chappe's optical telegraph: a chain of towers on hilltops, each visible from the next, relaying a message from one to the next. That is the network's topology, two centuries later, on the 868 MHz band.
 
-This repository tracks MeshCore upstream and adds a network-preservation layer, meant for a shared mesh where a single mis-configured relay can disrupt everyone. The goal is to feed these functions back into the official firmware, not to maintain a parallel fork.
+This repository tracks MeshCore upstream (currently **v1.18.0**) and adds a network-preservation layer, meant for a shared mesh where a single mis-configured relay can disrupt everyone. The goal is to feed these functions back into the official firmware, not to maintain a parallel fork.
 
 ## 🛡️ What this fork adds
 
 | Feature | Command | Purpose |
 |---|---|---|
+| Per-type block | `set block.type <type> <0\|1>` | drop one payload type outright; structural types (ACK, ADVERT, PATH, CONTROL) are refused |
+| Per-channel exceptions | `set allow.type <5\|6> <hash>` | re-open a blocked GRP_TXT (5) or GRP_DATA (6) for one channel |
 | Per-type hop caps | `set flood.max.type <type> <hops>` | limit one payload type's reach without touching the others |
 | Per-type priority | `set prio.type <type> <penalty>` | make a type yield under queue contention |
 | Per-type airtime budget | `set airtime.budget.type <type> <percent>` | cap a type's airtime share, as a percentage of the duty-cycle budget |
-| Channel data flooding | `set grp.data.block`, `set grp.data.allow` | drop flooded GRP_DATA, re-open per channel |
-| Filter observability | `stats-filter` | count dropped packets, by reason |
+| Channel data flooding | `set grp.data.block`, `set grp.data.allow` | drop flooded GRP_DATA (blocked by default), re-open per channel |
+| Neighbour block list | `block.add`, `block.remove`, `block.list` | ignore channel messages relayed by a given repeater (key prefix); `block.alltypes 1` extends it to all types |
+| Relay confirmation | `set grp.relay.enable` | re-broadcast a channel message when no neighbour is heard relaying it |
+| Filter observability | `stats-filter` | count dropped packets, by reason and by type |
+| T-Beam 1W LNA | `set radio.fem.rxgain on\|off` | switch the external receive LNA at runtime (on by default) |
 | Pinned radio preset | `LORA_CR=8` | align a fresh install on the network preset 869.618 MHz, 62.5 kHz, SF8, CR8 |
 
-The per-neighbour block list (`block.add` and friends) and the passive relay confirmation are the work of Fabrice Crohas; the per-type filtering layer, the QoS and the counters were added by Chappe 05.
+The per-neighbour block list (`block.add` and friends), the passive relay confirmation and the T-Beam 1W LNA control are the work of Fabrice Crohas; the per-type filtering layer, the QoS and the counters were added by Chappe 05. The filtering model is described in [docs/per_type_filtering.md](docs/per_type_filtering.md).
+
+Since v1.18 the radio settings (`rxdelay`, `txdelay`, `direct.txdelay`, `radio.fem.*`) are handled by upstream MeshCore; they behave as documented in the [upstream CLI reference](docs/cli_commands.md).
 
 ## 🧰 Online tools
 

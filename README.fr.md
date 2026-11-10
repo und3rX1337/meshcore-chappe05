@@ -10,6 +10,7 @@
 [![Build répéteurs](https://github.com/und3rX1337/meshcore-chappe05/actions/workflows/build-repeater-firmwares.yml/badge.svg)](https://github.com/und3rX1337/meshcore-chappe05/actions/workflows/build-repeater-firmwares.yml)
 [![Site](https://img.shields.io/badge/site-chappe05.fr-4BAEDF)](https://chappe05.fr)
 [![Fork de](https://img.shields.io/badge/fork%20de-MeshCore-8794D4)](https://github.com/meshcore-dev/MeshCore)
+[![Amont](https://img.shields.io/badge/bas%C3%A9%20sur-MeshCore%20v1.18.0-8794D4)](https://github.com/meshcore-dev/MeshCore/releases/tag/repeater-v1.18.0)
 
 **Fork du firmware MeshCore pour le réseau LoRa communautaire Chappe 05 (Hautes-Alpes) : filtrage par type de paquet, qualité de service et observabilité des relais.**
 
@@ -23,20 +24,27 @@
 
 Chappe 05 est un réseau LoRa communautaire en construction autour de Gap, dans les Hautes-Alpes, du nom du télégraphe optique de Claude Chappe : une chaîne de tours sur les points hauts, chacune visible de la suivante, relayant un message de proche en proche. C'est la topologie du réseau, deux siècles plus tard, sur la bande 868 MHz.
 
-Ce dépôt suit MeshCore en amont et y ajoute une couche de préservation du réseau, pensée pour un maillage partagé où un seul relais mal réglé peut gêner tout le monde. L'objectif est de faire remonter ces fonctions dans le firmware officiel, pas de maintenir un fork parallèle.
+Ce dépôt suit MeshCore en amont (actuellement la **v1.18.0**) et y ajoute une couche de préservation du réseau, pensée pour un maillage partagé où un seul relais mal réglé peut gêner tout le monde. L'objectif est de faire remonter ces fonctions dans le firmware officiel, pas de maintenir un fork parallèle.
 
 ## 🛡️ Ce que ce fork ajoute
 
 | Fonction | Commande | Rôle |
 |---|---|---|
+| Blocage par type | `set block.type <type> <0\|1>` | refuser un type de paquet en entier ; les types structurels (ACK, ADVERT, PATH, CONTROL) sont refusés |
+| Exceptions par canal | `set allow.type <5\|6> <hash>` | rouvrir un GRP_TXT (5) ou GRP_DATA (6) bloqué pour un canal donné |
 | Plafonds de sauts par type | `set flood.max.type <type> <sauts>` | limiter la portée d'un type de paquet sans toucher aux autres |
 | Priorité par type | `set prio.type <type> <malus>` | faire céder le passage à un type quand la file est chargée |
 | Budget de temps d'antenne par type | `set airtime.budget.type <type> <pourcent>` | plafonner la part d'airtime d'un type, en pourcentage du budget de rapport cyclique |
-| Données de canal en inondation | `set grp.data.block`, `set grp.data.allow` | refuser les GRP_DATA inondés, rouvrir au cas par cas |
-| Observabilité du filtrage | `stats-filter` | compter les paquets écartés, par motif |
+| Données de canal en inondation | `set grp.data.block`, `set grp.data.allow` | refuser les GRP_DATA inondés (bloqués par défaut), rouvrir au cas par cas |
+| Liste de blocage des voisins | `block.add`, `block.remove`, `block.list` | ignorer les messages de canal relayés par un répéteur donné (préfixe de clé) ; `block.alltypes 1` étend à tous les types |
+| Confirmation de relais | `set grp.relay.enable` | réémettre un message de canal quand aucun voisin n'est entendu le relayer |
+| Observabilité du filtrage | `stats-filter` | compter les paquets écartés, par motif et par type |
+| LNA du T-Beam 1W | `set radio.fem.rxgain on\|off` | activer ou couper le LNA de réception externe à chaud (actif par défaut) |
 | Preset radio épinglé | `LORA_CR=8` | aligner une installation neuve sur le preset réseau 869,618 MHz, 62,5 kHz, SF8, CR8 |
 
-Le socle de blocage par voisin (`block.add` et suivantes) et la confirmation passive de relais sont l'œuvre de Fabrice Crohas ; la couche de filtrage par type, la QoS et les compteurs ont été ajoutés par Chappe 05.
+Le socle de blocage par voisin (`block.add` et suivantes), la confirmation passive de relais et le contrôle du LNA du T-Beam 1W sont l'œuvre de Fabrice Crohas ; la couche de filtrage par type, la QoS et les compteurs ont été ajoutés par Chappe 05. Le modèle de filtrage est décrit dans [docs/per_type_filtering.md](docs/per_type_filtering.md) (en anglais).
+
+Depuis la v1.18, les réglages radio (`rxdelay`, `txdelay`, `direct.txdelay`, `radio.fem.*`) sont gérés par MeshCore en amont ; ils se comportent comme décrit dans la [référence CLI amont](docs/cli_commands.md) (en anglais).
 
 ## 🧰 Outils en ligne
 
